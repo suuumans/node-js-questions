@@ -1,7 +1,7 @@
-# Solutions to JavaScript and Node.js Practice Questions
+# Solutions to JavaScript Practice Questions
 
 ## Solution 1
-*Reference: [Question 1](questions.md#question-1)*
+*Reference: [Question 1](js-questions.md#question-1)*
 
 ### Q. What is JavaScript and what are its key features?
 
@@ -23,7 +23,7 @@ Key features include:
 
 
 ## Solution 2
-*Reference: [Question 2](questions.md#question-2)*
+*Reference: [Question 2](js-questions.md#question-2)*
 ### Q. What is the difference between JavaScript and Java?
 
 This is a common misconception due to the similar names, but JavaScript and Java are fundamentally different languages with distinct origins and uses. JavaScript was named "JavaScript" as a marketing ploy to capitalize on Java's popularity in the 90s, but that's where the similarity ends.
@@ -43,7 +43,7 @@ In short, if you're building a robust backend service, Java might be your go-to,
 
 
 ## Solution 3
-*Reference: [Question 3](questions.md#question-3)*
+*Reference: [Question 3](js-questions.md#question-3)*
 
 ### Q. What are the primitive data types in JavaScript?
 
@@ -60,7 +60,7 @@ JavaScript has seven primitive data types, which are the building blocks of the 
 
 
 ## Solution 4
-*Reference: [Question 4](questions.md#question-4)*
+*Reference: [Question 4](js-questions.md#question-4)*
 
 ### Q. What is the difference between == and === operators?
 
@@ -92,7 +92,7 @@ In general, it's recommended to use `===` to avoid unexpected behavior due to ty
 
 
 ## Solution 5
-*Reference: [Question 5](questions.md#question-5)*
+*Reference: [Question 5](js-questions.md#question-5)*
 
 ### Q. What does NaN stand for, and how can you check if a value is NaN?
 
@@ -117,7 +117,7 @@ In summary, NaN is a unique value in JavaScript that indicates an invalid number
 
 
 ## Solution 6
-*Reference: [Question 6](questions.md#question-6)*
+*Reference: [Question 6](js-questions.md#question-6)*
 
 ### Q. What is the difference between undefined and null?
 
@@ -148,7 +148,7 @@ In summary, use `undefined` when a variable has not been assigned a value, and u
 
 
 ## Solution 7
-*Reference: [Question 7](questions.md#question-7)*
+*Reference: [Question 7](js-questions.md#question-7)*
 
 ### Q. How do you check if a variable is undefined?
 
@@ -165,7 +165,7 @@ In modern code, optional chaining (`?`) or nullish coalescing (`??`) can handle 
 
 
 ## Solution 8
-*Reference: [Question 8](questions.md#question-8)*
+*Reference: [Question 8](js-questions.md#question-8)*
 
 ### Q. What is the typeof operator, and what values does it return?
 
@@ -202,7 +202,7 @@ In summary, the `typeof` operator is a useful tool for checking the type of a va
 
 
 ## Solution 9
-*Reference: [Question 9](questions.md#question-9)*
+*Reference: [Question 9](js-questions.md#question-9)*
 
 ### Q. Explain type coercion in JavaScript with examples.
 
@@ -239,7 +239,7 @@ In summary, while type coercion can be useful, it can also lead to bugs if not p
 
 
 ## Solution 10
-*Reference: [Question 10](questions.md#question-10)*
+*Reference: [Question 10](js-questions.md#question-10)*
 
 ### Q. What are falsy values in JavaScript?
 

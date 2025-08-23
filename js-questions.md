@@ -1,4 +1,6 @@
-# JavaScript and Node.js Questions
+# JavaScript Questions
+
+# Basics questions
 
 ## Question 1
 What is JavaScript and what are its key features?

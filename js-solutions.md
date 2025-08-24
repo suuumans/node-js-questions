@@ -283,3 +283,325 @@ if (!NaN) {
 ```
 
 In summary, falsy values are those that evaluate to false in a Boolean context, and they can lead to unexpected behavior if not properly understood.
+
+
+# Variable Scope and Declarations
+
+
+
+## Solution 11
+*Reference: [Question 11](js-questions.md#question-11)*
+
+### Q. What are the differences between var, let, and const?
+
+In JavaScript, var, let, and const are used for variable declarations, but they differ significantly in scope, hoisting behavior, and mutability—key to writing bug-free, maintainable code.
+
+- **Scope**: 
+  - `var` is function-scoped or globally-scoped, meaning it is accessible within the function it was declared in or globally if declared outside a function.
+  - `let` and `const` are block-scoped, meaning they are only accessible within the block (enclosed by `{}`) they were declared in.
+  
+- **Hoisting**:
+  - `var` declarations are hoisted to the top of their containing function or global scope, meaning they can be referenced before their declaration (but will be `undefined` until the declaration is reached).
+  - `let` and `const` declarations are also hoisted, but they are not initialized, leading to a "temporal dead zone" where they cannot be accessed until the declaration is encountered.
+
+- **Mutability**:
+  - Variables declared with `var` and `let` can be reassigned.
+  - Variables declared with `const` cannot be reassigned, making them immutable (though the contents of objects or arrays declared with `const` can still be modified).
+
+- **Global Object**:
+  - Variables declared with `var` in the global scope become properties of the global object (e.g., `window` in browsers).
+
+  - Variables declared with `let` and `const` do not create properties on the global object.
+
+- **Best Practices**:
+  - Use `let` and `const` instead of `var` to avoid issues with scope and hoisting.
+  - Prefer `const` for variables that should not be reassigned, and use `let` for those that will be.
+  - Use `const` for objects and arrays that should not be modified.
+
+**Examples**:
+
+```javascript
+// var example
+var x = 10;
+if (true) {
+    var x = 20; // same variable
+    console.log(x); // 20
+}
+console.log(x); // 20
+
+// let example
+let y = 10;
+if (true) {
+    let y = 20; // different variable
+    console.log(y); // 20
+}
+console.log(y); // 10
+
+// const example
+const z = 10;
+if (true) {
+    const z = 20; // different variable
+    console.log(z); // 20
+}
+console.log(z); // 10
+```
+In summary, prefer `let` and `const` for better scoping and immutability, and avoid `var` to prevent potential pitfalls.
+
+
+
+## Solution 12
+*Reference: [Question 12](js-questions.md#question-12)*
+
+### Q. What is hoisting in JavaScript?
+
+Hoisting in JavaScript is the language’s way of moving certain declarations to the top of their scope before any code runs. This happens during the compilation phase, so when execution begins, JavaScript already “knows” about your variables and functions — even if they’re written further down in the code.
+
+- **Variable Hoisting**: Variables declared with `var` are hoisted to the top of their function or global scope, meaning they can be referenced before their declaration (but will be `undefined` until the declaration is reached). Variables declared with `let` and `const` are also hoisted, but they are not initialized, leading to a "temporal dead zone" where they cannot be accessed until the declaration is encountered.
+
+- **Function Hoisting**: Function declarations are hoisted completely, meaning you can call a function before it is defined in the code. However, function expressions (including arrow functions) are not hoisted in the same way, and attempting to call them before their definition will result in an error.
+
+- **Example**:
+```javascript
+// Variable Hoisting
+console.log(a); // undefined
+var a = 5;
+console.log(a); // 5
+
+console.log(c); // ReferenceError: Cannot access 'c' before initialization
+const c = 15;
+console.log(c); // 15
+
+// function Hoisting
+fn(); // Works!
+function fn() { console.log('Hoisted!'); }
+```
+
+
+
+## Solution 13
+*Reference: [Question 13](js-questions.md#question-13)*
+
+### Q. What is the temporal dead zone (TDZ)?
+
+The temporal dead zone (TDZ) is a behavior in JavaScript that occurs when a variable is accessed before it has been declared. This is particularly relevant for variables declared with `let` and `const`, which are block-scoped and not initialized until their declaration is reached.
+
+In the TDZ, any attempt to access the variable before its declaration will result in a `ReferenceError`. This is because, unlike `var`, which is hoisted and initialized to `undefined`, `let` and `const` are not initialized at all until their declaration is encountered.
+
+- Introduced in ES6 to fix var's issues.
+- Applies to `let`, `const`, and classes (not `var` or functions).
+- TDZ ends at the declaration, even if initialization happens later (e.g., `let x; console.log(x); // undefined` is fine after declaration).
+
+**Example**:
+
+```javascript
+console.log(a); // ReferenceError: Cannot access 'a' before initialization
+let a = 5;
+
+console.log(b); // ReferenceError: Cannot access 'b' before initialization
+const b = 10;
+```
+
+
+
+## Solution 14
+*Reference: [Question 14](js-questions.md#question-14)*
+
+### Q. Explain block scope vs function scope.
+
+Scope determines variable accessibility and lifetime in JavaScript, with two main types:
+
+- **Function Scope**: Variables declared with `var` are scoped to the nearest function (or global if none). They persist until the function ends and are inaccessible outside. Nested functions create closures, capturing outer scopes.
+
+- **Block Scope**: Introduced in ES6 with `let` and `const`, confines variables to the nearest block (delimited by {}). Ideal for loops, conditionals, or try-catch to avoid leakage.
+
+**Example**:
+```javascript
+function example() {
+    var a = 1;
+    let b = 2;
+    const c = 3;
+
+    if (true) {
+        var a = 4; // same variable
+        let b = 5; // different variable
+        const c = 6; // different variable
+        console.log(a); // 4 (block scope)
+        console.log(b); // 5 (block scope)
+        console.log(c); // 6 (block scope)
+    }
+
+    console.log(a); // 4 
+    console.log(b); // 2 (function scope)
+    console.log(c); // 3 (function scope)
+}
+```
+In summary, prefer `let` and `const` for better scoping and immutability, and avoid `var` to prevent potential pitfalls.
+
+
+
+## Solution 15
+*Reference: [Question 15](js-questions.md#question-15)*
+
+### Q. What is global scope, and how can variables leak into it?
+
+Global scope refers to the outermost scope in a JavaScript program, where variables are accessible from anywhere in the code. Variables declared outside of any function or block are in the global scope.
+
+Variables can leak into the global scope in several ways:
+
+1. **Implicit Global Variables**: If you assign a value to a variable without declaring it with `var`, `let`, or `const`, it becomes a global variable.
+   ```javascript
+   function leak() {
+       a = 10; // Implicitly global
+   }
+   leak();
+   console.log(a); // 10
+   ```
+
+2. **Global Object Properties**: In browsers, global variables are properties of the `window` object. You can create global variables by attaching them to `window`.
+   ```javascript
+   function createGlobal() {
+       window.b = 20;
+   }
+   createGlobal();
+   console.log(b); // 20
+   ```
+
+3. **Function Scope Leakage**: If a variable is declared with `var` inside a function, it is function-scoped. However, if you forget to use `var`, `let`, or `const`, it will leak to the global scope.
+   ```javascript
+   function leakVar() {
+       var c = 30; // Function-scoped
+       d = 40; // Implicitly global
+   }
+   leakVar();
+   console.log(c); // ReferenceError
+   console.log(d); // 40
+   ```
+
+To avoid leaking variables into the global scope, always use `var`, `let`, or `const` when declaring variables.
+
+
+
+## Solution 16
+*Reference: [Question 16](js-questions.md#question-16)*
+
+### Q. What happens if you declare a variable without var, let, or const?
+
+If you declare a variable without using `var`, `let`, or `const`,  (e.g., `x = 5;`) it becomes an implicit global variable. This means it is accessible from anywhere in your code, which can lead to unintended consequences and bugs.
+
+**Example**:
+```javascript
+function implicitGlobal() {
+    x = 5; // Implicitly global
+}
+implicitGlobal();
+console.log(x); // 5
+```
+
+In the example above, the variable `x` is declared without any keyword, making it a global variable. This can cause conflicts if other parts of the code use the same variable name.
+
+To avoid this issue, always use `var`, `let`, or `const` when declaring variables.
+
+
+
+## Solution 17
+*Reference: [Question 17](js-questions.md#question-17)*
+
+### Q. Can you redeclare variables declared with let or const?
+
+No, you cannot redeclare variables declared with `let` or `const` within the same scope. Attempting to do so will result in a `SyntaxError`.
+
+**Example**:
+```javascript
+let a = 1;
+const b = 2;
+
+let a = 3; // SyntaxError: Identifier 'a' has already been declared
+const b = 4; // SyntaxError: Identifier 'b' has already been declared
+```
+
+However, shadowing in inner scopes is allowed (e.g., nested blocks). This enforces intentionality, reducing bugs in complex codebases.
+
+**Example**:
+```javascript
+let a = 1;
+const b = 2;
+
+if (true) {
+    let a = 3; // Different variable
+    const b = 4; // Different variable
+    console.log(a); // 3
+    console.log(b); // 4
+}
+
+console.log(a); // 1
+console.log(b); // 2
+```
+
+
+
+## Solution 18
+*Reference: [Question 18](js-questions.md#question-18)*
+
+### Q. What is variable shadowing?
+
+Variable shadowing occurs when an inner scope declares a variable with the same name as an outer one, "hiding" the outer variable temporarily. This can lead to confusion and bugs if not managed carefully.
+
+**Example**:
+```javascript
+let a = 1;
+
+if (true) {
+    let a = 2; // Shadowing outer 'a'
+    console.log(a); // 2
+}
+
+console.log(a); // 1
+```
+
+
+
+## Solution 19
+*Reference: [Question 19](js-questions.md#question-19)*
+
+### Q. What is an Immediately Invoked Function Expression (IIFE)?
+
+An IIFE, or Immediately Invoked Function Expression, is a JavaScript function that runs as soon as it is defined. It is a common design pattern used to create a new scope and avoid polluting the global namespace.
+
+**Example**:
+```javascript
+(function() {
+    let a = 1;
+    console.log(a); // 1
+})();
+```
+Benefits of IIFE is that it creates a new scope, preventing variables from leaking into the global scope and avoiding potential naming conflicts. This is particularly useful in modular programming and when working with asynchronous code.
+
+
+
+## Solution 20
+*Reference: [Question 20](js-questions.md#question-20)*
+
+### Q. What does 'use strict' mode do in JavaScript?
+
+`'use strict'` is a directive introduced in ECMAScript 5 that enables strict mode in JavaScript. When a script or function is executed in strict mode, it operates under a stricter set of rules, which helps catch common coding mistakes and "unsafe" actions.
+
+Some key features of strict mode include:
+
+1. **Elimination of `this` coercion**: In strict mode, if a function is called without an explicit `this` value, `this` will be `undefined` instead of the global object.
+
+2. **Prevention of variable leakage**: Variables must be declared with `var`, `let`, or `const`. Assigning a value to an undeclared variable will throw an error.
+
+3. **Read-only properties**: Attempting to write to a read-only property will throw an error.
+
+4. **No duplicate parameter names**: Functions cannot have duplicate parameter names.
+
+**Example**:
+```javascript
+'use strict';
+
+x = 1; // ReferenceError
+
+function strictFunction() {
+    // ...
+}
+```

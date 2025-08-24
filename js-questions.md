@@ -31,3 +31,35 @@ Explain type coercion in JavaScript with examples.
 
 ## Question 10
 What are falsy values in JavaScript?
+
+# Variable Scope and Declarations
+
+## Question 11
+What are the differences between var, let, and const?
+
+## Question 12
+What is hoisting in JavaScript?
+
+## Question 13
+What is the temporal dead zone (TDZ)?
+
+## Question 14
+Explain block scope vs function scope.
+
+## Question 15
+What is global scope, and how can variables leak into it?
+
+## Question 16
+What happens if you declare a variable without var, let, or const?
+
+## Question 17
+Can you redeclare variables declared with let or const?
+
+## Question 18
+What is variable shadowing?
+
+## Question 19
+What is an Immediately Invoked Function Expression (IIFE)?
+
+## Question 20
+What does 'use strict' mode do in JavaScript?

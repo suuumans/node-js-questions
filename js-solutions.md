@@ -605,3 +605,475 @@ function strictFunction() {
     // ...
 }
 ```
+
+
+
+# Functions in JavaScript
+
+## Solution 21
+*Reference: [Question 21](js-questions.md#question-21)*
+
+### Q. What is a function in JavaScript, and how do you define one?
+
+A function in JavaScript is a reusable block of code that performs a specific task, encapsulating logic for modularity and abstraction. Functions are first-class citizens, meaning they can be assigned to variables, passed as arguments, returned from other functions, and even have properties—enabling paradigms like functional programming.
+
+Functions can be defined in several ways:
+
+- **Function Declarations**: These are the most common way to define a function. They are hoisted, meaning they can be called before they are defined in the code.
+  ```javascript
+  function add(a, b) {
+      return a + b;
+  }
+  ```
+
+- **Function Expressions**: These involve creating a function and assigning it to a variable. They are not hoisted, so they cannot be called before they are defined.
+  ```javascript
+  const add = function(a, b) {
+      return a + b;
+  };
+  ```
+
+- **Arrow Functions**: Introduced in ES6, arrow functions provide a more concise syntax for writing function expressions. They do not have their own `this` context.
+  ```javascript
+  const add = (a, b) => a + b;
+  ```
+
+Functions can be invoked with (), and they support parameters, returns, and scopes. They can be called multiple times with different arguments, making code more reusable and organized.
+
+
+
+## Solution 22
+*Reference: [Question 22](js-questions.md#question-22)*
+
+### Q. What is the difference between function declarations and function expressions?
+
+Function declarations and expressions both define functions, but they differ in hoisting, naming, and use cases, impacting code organization and debugging.
+- **Function Declarations**:
+  - Syntax: `function name() { ... }`
+  - Fully hoisted (declaration and body), callable before definition.
+  - Named, aiding stack traces.
+  - Best for standalone utilities.
+
+  ```javascript
+  console.log(calculateArea(5)); // 'Declared!' (hoisted)
+  function calculateArea(radius) {
+      return Math.PI * radius * radius;
+  }
+  ```
+
+- **Function Expressions**:
+  - Syntax: `const name = function() { ... };` (or anonymous).
+  - Only the variable is hoisted (as `undefined` for `var`, TDZ for `let`/`const`), so invocation before assignment errors.
+  - Can be anonymous, but naming helps debugging (e.g., `const named = function namedFn() { ... };`).
+  - Ideal for IIFEs, callbacks, or conditional definitions.
+
+  ```javascript
+  console.log(calculateArea(5)); // TypeError or ReferenceError
+  const calculateArea = function(radius) {
+    return Math.PI * radius * radius;
+  };
+  ```
+In summary, function declarations are hoisted and can be called before their definition, while function expressions are not hoisted in the same way and cannot be called before they are defined.
+
+
+## Solution 23
+*Reference: [Question 23](js-questions.md#question-23)*
+
+### Q. What are arrow functions, and how do they differ from regular functions?
+
+Arrow functions are a more concise syntax for writing function expressions in JavaScript. They differ from regular functions in several key ways:
+
+- **Syntax**: Arrow functions use a shorter syntax, omitting the `function` keyword and using the `=>` (fat arrow) notation.
+   ```javascript
+   const add = (a, b) => a + b;
+   ```
+
+- **Lexical `this`**: Arrow functions do not have their own `this` context. Instead, they inherit `this` from the surrounding lexical scope, making them ideal for use in callbacks and methods where you want to preserve the context.
+   ```javascript
+   function Counter() {
+       this.count = 0;
+       setInterval(() => {
+           this.count++;
+           console.log(this.count); // Lexical scoping of `this`
+       }, 1000);
+   }
+   ```
+
+- **No `arguments` object**: Arrow functions do not have their own `arguments` object. If you need to access arguments, you must use rest parameters or rely on the outer function's `arguments`.
+
+   ```javascript
+   // Simple arrow function
+   const greet = (name) => `Hello ${name}!`;
+   console.log(greet('John')); // Hello John!
+
+   // Arrow function with multiple parameters
+   const multiply = (a, b) => a * b;
+   console.log(multiply(2, 3)); // 6
+
+   // Arrow function with rest parameters
+   const joinWords = (...words) => words.join(' ');
+   console.log(joinWords('Hello', 'there', 'friend')); // Hello there friend
+   ```
+
+- **Cannot be used as constructors**: Arrow functions cannot be used with the `new` keyword, as they do not have a `[[Construct]]` method.
+   ```javascript
+   const Person = (name) => {
+       this.name = name;
+   };
+   const john = new Person('John'); // TypeError
+   ```
+
+## Solution 24
+*Reference: [Question 24](js-questions.md#question-24)*
+
+### Q. Explain the 'this' keyword in JavaScript.
+
+The `this` keyword in JavaScript refers to the context in which a function is called. Its value can change depending on how a function is invoked. Here are some key points about `this`:
+
+1. **Global Context**: In the global execution context (outside of any function), `this` refers to the global object. In browsers, this is the `window` object.
+   ```javascript
+   console.log(this); // Window object
+   ```
+
+2. **Function Context**: Inside a regular function, `this` refers to the object that called the function. If the function is called as a method of an object, `this` refers to that object.
+   ```javascript
+   const obj = {
+       name: 'John',
+       greet: function() {
+           console.log(this.name);
+       }
+   };
+   obj.greet(); // John
+   ```
+
+3. **Arrow Functions**: Arrow functions do not have their own `this` context. Instead, they inherit `this` from the surrounding lexical scope.
+   ```javascript
+   const obj = {
+       name: 'John',
+       greet: function() {
+           const arrow = () => console.log(this.name);
+           arrow();
+       }
+   };
+   obj.greet(); // John
+   ```
+
+4. **Event Handlers**: In event handlers, `this` refers to the element that triggered the event.
+   ```javascript
+   const button = document.querySelector('button');
+   button.addEventListener('click', function() {
+       console.log(this); // button element
+   });
+   ```
+
+5. **Explicit Binding**: You can explicitly set the value of `this` using `call()`, `apply()`, or `bind()`.
+
+
+## Solution 25
+*Reference: [Question 25](js-questions.md#question-25)*
+
+### Q. What are the differences between call(), apply(), and bind()?
+
+`call()`, `apply()`, and `bind()` are methods available on all JavaScript functions that allow you to explicitly set the value of 'this' within a function, but they have different use cases and syntax:
+
+- `call()` invokes a function with a specified `this` value and individual arguments.
+- `apply()` invokes a function with a specified `this` value and an array of arguments.
+- `bind()` creates a new function that, when called, has its `this` keyword set to the provided value, with a given sequence of arguments preceding any provided when the new function is called.
+
+- **call():**
+    - Invokes a function with a specified 'this' value and arguments provided individually
+    - Syntax: `function.call(thisArg, arg1, arg2, ...)`.
+    - Executes the function immediately
+    ```typescript
+    function greet(greeting) {
+        return `${greeting}, ${this.name}`;
+        }
+    
+        const person = { name: 'John' };
+    ```
+
+- **apply():**
+    - Similar to call(), but accepts arguments as an array
+    - Syntax: `function.apply(thisArg, [argsArray])`
+    - Executes the function immediately
+    - Useful when arguments are already in an array
+    ```javascript
+    function introduce(greeting, message) {
+        return `${greeting}, ${this.name}. ${message}`;
+    }
+
+    const person = { name: 'John' };
+    console.log(introduce.apply(person, ['Hello', 'How are you?'])); // "Hello, John. How are you?"
+    ```
+
+- **bind():**
+    - Creates a new function with a bound 'this' value without executing it
+    - Syntax: `function.bind(thisArg, arg1, arg2, ...)`
+    - Does not execute the function immediately, returns a bound function that can be called later
+    - Arguments can be partially applied
+    ```javascript
+    function calculateTax(rate) {
+        return this.amount * rate;
+    }
+
+    const product = { amount: 100 };
+    const calculateProductTax = calculateTax.bind(product);
+    console.log(calculateProductTax(0.1)); // 10
+
+    // Partial application
+    const calculateProductTaxAt20Percent = calculateTax.bind(product, 0.2);
+    console.log(calculateProductTaxAt20Percent()); // 20
+    ```
+
+**Examples of `call()`, `apply()`, and `bind()` together**:
+   ```javascript
+   // Example with a calculator object
+   const calculator = {
+       multiply: function(a, b) {
+           return a * b;
+       },
+       sum: function(...numbers) {
+           return numbers.reduce((total, num) => total + num, 0);
+       }
+   };
+
+   // 1. call() - calls a function with a given 'this' and arguments passed individually
+   const numbers = {
+       numbers: [5, 6],
+       getProduct() {
+           return this.numbers[0] * this.numbers[1];
+       }
+   };
+   console.log(numbers.getProduct.call({ numbers: [10, 2] })); // 20
+
+   // 2. apply() - same as call(), but arguments passed as an array
+   const prices = [10.5, 9.99, 8.75, 12.99];
+   console.log(calculator.sum.apply(null, prices)); // 42.23
+
+   // 3. bind() - creates a new function with a fixed 'this' value
+   const discountCalculator = {
+       discount: 0.1,
+       calculateFinal(price) {
+           return price - (price * this.discount);
+       }
+   };
+
+   const calculate20PercentDiscount = discountCalculator.calculateFinal.bind({ discount: 0.2 });
+   console.log(calculate20PercentDiscount(100)); // 80
+   ```
+
+This method is particularly useful for borrowing methods from other objects and working with callbacks.
+
+## Solution 26
+*Reference: [Question 26](js-questions.md#question-26)*
+
+### Q. What are higher-order functions? Provide an example.
+
+Higher-order functions (HOFs) are functions that either take one or more functions as arguments or return a function as their result. They are a powerful concept in JavaScript that enables functional programming patterns like composition, abstraction, and behavior parameterization.
+
+Examples -  map(), filter(), and reduce() are all higher-order functions.
+Custom example:
+```javascript
+// Array.map() is a built-in higher-order function
+const numbers = [1, 2, 3, 4, 5];
+const doubled = numbers.map(num => num * 2);
+console.log(doubled); // [2, 4, 6, 8, 10]
+
+// Custom higher-order function example
+function createMultiplier(factor) {
+  // Returns a new function
+  return function(number) {
+    return number * factor;
+  };
+}
+
+const double = createMultiplier(2);
+const triple = createMultiplier(3);
+
+console.log(double(5)); // 10
+console.log(triple(5)); // 15
+```
+
+## Solution 27
+*Reference: [Question 27](js-questions.md#question-27)*
+
+### Q. What is currying in JavaScript?
+
+Currying is a functional programming technique in which a function is transformed into a sequence of functions, each taking a single argument. Instead of taking all arguments at once, a curried function takes one argument and returns a new function that takes the next argument, and so on, until all arguments are provided.
+
+- It transforms a function with multiple arguments into a sequence of functions.
+- Each returned function takes exactly one argument.
+- It allows for partial application of function arguments.
+- It increases code reusability and composability.
+
+Example:
+```javascript
+// Non-curried function
+function add(a, b, c) {
+  return a + b + c;
+}
+
+// Curried version
+function curriedAdd(a) {
+  return function(b) {
+    return function(c) {
+      return a + b + c;
+    };
+  };
+}
+
+// Using the curried function
+console.log(curriedAdd(1)(2)(3)); // 6
+
+// Partial application
+const addOne = curriedAdd(1);
+const addOneAndTwo = addOne(2); // 3
+console.log(addOneAndTwo(3)); // 6
+
+// With ES6 arrow functions, the syntax becomes more concise
+const arrowCurriedAdd = a => b => c => a + b + c;
+console.log(arrowCurriedAdd(1)(2)(3)); // 6
+```
+
+## Solution 28
+*Reference: [Question 28](js-questions.md#question-28)*
+
+### Q. What is a pure function?
+
+A pure function is a fundamental concept in functional programming that has two main characteristics:
+1. **Deterministic:** Given the same inputs, a pure function always returns the same output.
+
+2. **No side effects:** A pure function doesn't modify external state, mutate arguments, or perform operations that affect anything outside its scope (like I/O operations, DOM manipulations, or network requests).
+
+**Key benefits of pure functions:**
+- Predictability and easier debugging
+- Testability (no external dependencies to mock)
+- Memoization potential (caching results)
+- Safe for parallelization and concurrency
+- Referential transparency (can be replaced with their return values)
+
+```javascript
+// Pure function
+function add(a, b) {
+  return a + b;
+}
+
+// Pure function
+function calculateArea(radius) {
+  return Math.PI * radius * radius;
+}
+
+// Pure function for data transformation
+function mapUserNames(users) {
+  return users.map(user => user.name);
+}
+```
+**Example of an impure function**:
+```javascript
+// Impure (depends on external state)
+let total = 0;
+function addToTotal(value) {
+  total += value; // Side effect: modifies external state
+  return total;
+}
+
+// Impure (performs I/O)
+function logMessage(message) {
+  console.log(message); // Side effect: I/O operation
+}
+
+// Impure (mutates input)
+function addItemToCart(cart, item) {
+  cart.push(item); // Side effect: mutates the input array
+  return cart;
+}
+```
+
+## Solution 29
+*Reference: [Question 29](js-questions.md#question-29)*
+
+### Q. How do default parameters work in functions?
+
+Default parameters allow named parameters to be initialized with default values if no value or `undefined` is passed. This feature helps to make functions more flexible and easier to use. This feature was introduced in ES6 (ECMAScript 2015) and helps make functions more robust and flexible.
+
+**Key aspects of default parameters:**
+- They provide fallback values when arguments are omitted or undefined
+- They are evaluated at call time, not when the function is defined
+- They can be expressions, not just simple values
+- They can refer to previous parameters in the same function signature
+
+Example:
+```javascript
+function multiply(a, b = 1) {
+  return a * b;
+}
+
+console.log(multiply(5, 2)); // 10
+console.log(multiply(5));    // 5 (b is 1 by default)
+```
+
+**More complex examples:**
+```javascript
+// Default parameters can be expressions
+function calculateTax(amount, taxRate = amount * 0.1) {
+  return amount + taxRate;
+}
+
+console.log(calculateTax(100));     // 110
+console.log(calculateTax(100, 20)); // 120
+
+// Default parameters can reference previous parameters
+function createUser(name, role = 'user', permissions = getDefaultPermissions(role)) {
+  return { name, role, permissions };
+  
+  function getDefaultPermissions(role) {
+    return role === 'admin' ? ['read', 'write', 'delete'] : ['read'];
+  }
+}
+
+console.log(createUser('John'));                // { name: 'John', role: 'user', permissions: ['read'] }
+console.log(createUser('Admin', 'admin'));      // { name: 'Admin', role: 'admin', permissions: ['read', 'write', 'delete'] }
+console.log(createUser('Jane', 'editor', []));  // { name: 'Jane', role: 'editor', permissions: [] }
+```
+Default parameters are particularly useful when creating flexible utility functions and APIs, reducing the need for extensive parameter checking within function bodies.
+
+## Solution 30
+*Reference: [Question 30](js-questions.md#question-30)*
+
+### Q. What are rest parameters, and how are they used?
+
+Rest parameters allow a function to accept an indefinite number of arguments as an array. This feature was introduced in ES6 (ECMAScript 2015) and provides a more flexible way to work with function arguments.
+
+**Key aspects of rest parameters:**
+- They are defined using the `...` syntax before the last parameter in a function signature.
+- They collect all remaining arguments into an array.
+- They can be used in combination with other named parameters.
+
+Example:
+```javascript
+function sum(...numbers) {
+  return numbers.reduce((total, num) => total + num, 0);
+}
+
+console.log(sum(1, 2, 3));       // 6
+console.log(sum(1, 2, 3, 4, 5)); // 15
+console.log(sum());              // 0
+```
+
+**More complex examples:**
+```javascript
+// Rest parameters can be used with other named parameters
+function concatenateStrings(separator, ...strings) {
+  return strings.join(separator);
+}
+
+console.log(concatenateStrings(', ', 'apple', 'banana', 'cherry')); // "apple, banana, cherry"
+
+// Rest parameters can be useful for variadic functions
+function logMessages(...messages) {
+  messages.forEach(msg => console.log(msg));
+}
+
+logMessages('Hello', 'World', 'This', 'is', 'JavaScript');
+```
+Rest parameters are particularly useful when creating functions that need to handle a variable number of arguments without explicitly defining each one.

@@ -63,3 +63,35 @@ What is an Immediately Invoked Function Expression (IIFE)?
 
 ## Question 20
 What does 'use strict' mode do in JavaScript?
+
+# Functions in JavaScript
+
+## Question 21
+What is a function in JavaScript, and how do you define one?
+
+## Question 22
+What is the difference between function declarations and function expressions?
+
+## Question 23
+What are arrow functions, and how do they differ from regular functions?
+
+## Question 24
+Explain the 'this' keyword in JavaScript.
+
+## Question 25
+What are the differences between call(), apply(), and bind()?
+
+## Question 26
+What are higher-order functions? Provide an example.
+
+## Question 27
+What is currying in JavaScript?
+
+## Question 28
+What is a pure function?
+
+## Question 29
+How do default parameters work in functions?
+
+## Question 30
+What are rest parameters, and how are they used?

@@ -95,3 +95,35 @@ How do default parameters work in functions?
 
 ## Question 30
 What are rest parameters, and how are they used?
+
+# Arrays in JavaScript
+
+## Question 31
+How do you create an array in JavaScript?
+
+## Question 32
+What is the difference between push() and concat()?
+
+## Question 33
+Explain the difference between splice() and slice().
+
+## Question 34
+What are the different ways to iterate over an array?
+
+## Question 35
+What do map(), filter(), and reduce() do? Provide examples.
+
+## Question 36
+What is the difference between find() and filter()?
+
+## Question 37
+How do you check if an array includes a specific value?
+
+## Question 38
+How does the sort() method work, and how do you sort an array of numbers correctly?
+
+## Question 39
+What are flat() and flatMap() methods?
+
+## Question 40
+What are the ways to copy an array without mutating the original?

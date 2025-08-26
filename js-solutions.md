@@ -607,7 +607,6 @@ function strictFunction() {
 ```
 
 
-
 # Functions in JavaScript
 
 ## Solution 21
@@ -1077,3 +1076,518 @@ function logMessages(...messages) {
 logMessages('Hello', 'World', 'This', 'is', 'JavaScript');
 ```
 Rest parameters are particularly useful when creating functions that need to handle a variable number of arguments without explicitly defining each one.
+
+
+# Arrays in JavaScript
+
+## Solution 31
+*Reference: [Question 31](js-questions.md#question-31)*
+
+### Q. How do you create an array in JavaScript?
+
+Creating an array in JavaScript is straightforward and flexible, as arrays are dynamic, resizable, and can hold mixed types. They're zero-indexed and inherit from Array.prototype, offering built-in methods.
+
+Ways to create:
+- **Literal Syntax**: Most common and performant for simple initialization.
+```javascript
+const arr = [1, 'two', true]; // Mixed types allowed
+```
+
+- **Array Constructor**: Useful for pre-allocating length or from arguments.
+```javascript
+
+const empty = new Array(5); // [ <5 empty items> ] – sparse array
+const fromArgs = new Array(1, 2, 3); // [1, 2, 3]
+```
+
+- **Array.of()**: ES6 method; handles single numeric arg differently from constructor.
+```javascript
+const single = Array.of(5); // [5] vs. new Array(5) which is sparse
+```
+
+- **Array.from()**: ES6; creates from array-like (e.g., NodeList, strings) or iterables, with optional mapping.
+```javascript
+const fromString = Array.from('hello'); // ['h', 'e', 'l', 'l', 'o']
+const mapped = Array.from({length: 3}, (_, i) => i * 2); // [0, 2, 4]
+```
+Arrays aren't truly arrays but objects with numeric keys— `typeof [] === 'object', but Array.isArray([]) === true.`
+
+
+
+## Solution 32
+*Reference: [Question 32](js-questions.md#question-32)*
+
+### Q. What is the difference between push() and concat()?
+
+Both `push()` and `concat()` add elements to arrays, but they differ in mutability, return values, and handling multiple additions—key for immutable patterns in functional programming.
+
+- **`push()`**: Mutates the original array by appending one or more elements; returns the new length.     
+  - Ideal for in-place modifications, but avoid in pure functions to prevent side effects.
+
+```javascript
+// push() - adds elements to the end of an array and returns the new length
+const numbers = [1, 2, 3];
+const length = numbers.push(4, 5);
+console.log(numbers); // [1, 2, 3, 4, 5]
+console.log(length);  // 5
+```
+
+- **`concat()`**: Non-mutating; returns a new array by merging the original with arguments (elements or arrays).
+  - Handles arrays as spreads; great for immutability.
+
+```javascript
+// concat() - combines arrays and/or values and returns a new array
+const originalArray = [1, 2, 3];
+const newArray = originalArray.concat([4, 5], 6);
+console.log(originalArray); // [1, 2, 3] - unchanged
+console.log(newArray);      // [1, 2, 3, 4, 5, 6]
+```
+
+Key differences:
+1. **Mutability**: `push()` modifies the original array (mutating method), while `concat()` returns a new array without modifying the original (non-mutating).
+2. **Return value**: `push()` returns the new length of the array, while `concat()` returns a new array.
+3. **Array flattening**: `concat()` flattens arrays one level deep, while `push()` adds arrays as elements.
+
+```javascript
+// Demonstrating array flattening difference
+const arr1 = [1, 2];
+arr1.push([3, 4]);
+console.log(arr1); // [1, 2, [3, 4]]
+
+const arr2 = [1, 2];
+const arr3 = arr2.concat([3, 4]);
+console.log(arr3); // [1, 2, 3, 4]
+```
+
+## Solution 33
+*Reference: [Question 33](js-questions.md#question-33)*
+
+### Q. Explain the difference between splice() and slice().
+
+Both `splice()` and `slice()` manipulate arrays by modifying their contents, but they differ in mutability, return values, and handling removals—key for immutable patterns in functional programming.
+
+```javascript
+// splice() - changes the contents of an array by removing, replacing, or adding elements
+const months = ['Jan', 'Feb', 'Apr', 'May'];
+const removed = months.splice(2, 0, 'Mar'); // Insert at index 2, remove 0 elements
+console.log(months); // ['Jan', 'Feb', 'Mar', 'Apr', 'May']
+console.log(removed); // [] (nothing was removed)
+
+// Remove and replace elements
+const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+const removedDays = days.splice(2, 2, 'Wednesday', 'Thursday');
+console.log(days); // ['Mon', 'Tue', 'Wednesday', 'Thursday', 'Fri']
+console.log(removedDays); // ['Wed', 'Thu'] (removed elements)
+
+// slice() - returns a shallow copy of a portion of an array
+const animals = ['ant', 'bison', 'camel', 'duck', 'elephant'];
+const sliced = animals.slice(1, 4);
+console.log(animals); // ['ant', 'bison', 'camel', 'duck', 'elephant'] (unchanged)
+console.log(sliced); // ['bison', 'camel', 'duck']
+```
+Key differences:
+1. **Mutability**: `splice()` modifies the original array, while `slice()` creates a new array without modifying the original.
+2. **Parameters**:
+  - `splice(start, deleteCount, ...items)` - start index, number of elements to delete, and elements to insert
+  - `slice(start, end)` - start index (inclusive) and end index (exclusive)
+3. **Return value**: `splice()` returns an array of removed elements, while `slice()` returns a new array with extracted elements.
+4. **Negative indices**: Both support negative indices to count from the end of the array.
+
+I find the mnemonic "splice = surgery" helpful for remembering that splice() modifies the array, while "slice = sampling" suggests taking a non-destructive view.
+
+## Solution 34
+*Reference: [Question 34](js-questions.md#question-34)*
+
+### Q. What are the different ways to iterate over an array?
+
+JavaScript offers multiple iteration methods, from imperative to declarative, balancing readability, performance, and control flow—essential for processing large datasets efficiently.
+
+1. **forEach()**: Executes a provided function once for each array element.
+   ```javascript
+   const numbers = [1, 2, 3];
+   numbers.forEach((num) => console.log(num)); // 1 2 3
+   ```
+
+2. **for...of**: Iterates over iterable objects (including arrays) and provides a simpler syntax.
+   ```javascript
+   const numbers = [1, 2, 3];
+   for (const num of numbers) {
+       console.log(num); // 1 2 3
+   }
+   ```
+
+3. **map()**: Creates a new array populated with the results of calling a provided function on every element.
+   ```javascript
+   const numbers = [1, 2, 3];
+   const doubled = numbers.map((num) => num * 2);
+   console.log(doubled); // [2, 4, 6]
+   ```
+
+4. **filter()**: Creates a new array with all elements that pass the test implemented by the provided function.
+   ```javascript
+   const numbers = [1, 2, 3, 4, 5];
+   const evens = numbers.filter((num) => num % 2 === 0);
+   console.log(evens); // [2, 4]
+   ```
+
+5. **reduce()**: Executes a reducer function on each element, resulting in a single output value.
+   ```javascript
+   const numbers = [1, 2, 3];
+   const sum = numbers.reduce((acc, num) => acc + num, 0);
+   console.log(sum); // 6
+   ```
+
+6. **for Loop**: A traditional way to iterate over arrays using a counter.
+   ```javascript
+   const numbers = [1, 2, 3];
+   for (let i = 0; i < numbers.length; i++) {
+       console.log(numbers[i]); // 1 2 3
+   }
+   ```
+
+For performance `for` is the fastest, followed by `for...of`, then `forEach`, with `map/filter/reduce` being slower due to function calls and creating new arrays. Choose based on readability vs. performance needs.
+
+## Solution 35
+*Reference: [Question 35](js-questions.md#question-35)*
+
+### Q. What do map(), filter(), and reduce() do? Provide examples.
+
+These three methods are the cornerstone of functional programming in JavaScript, enabling powerful data transformations:
+
+- **`map()`**: Creates a new array by applying a function to each element of the original array.
+
+  ```javascript
+  const numbers = [1, 2, 3, 4, 5];
+
+  // Double each number
+  const doubled = numbers.map(num => num * 2);
+  console.log(doubled); // [2, 4, 6, 8, 10]
+
+  // Format array of objects
+  const users = [
+    { id: 1, name: 'Alice' },
+    { id: 2, name: 'Bob' }
+  ];
+  const usernames = users.map(user => user.name);
+  console.log(usernames); // ['Alice', 'Bob']
+  ```
+
+- **`filter()`**: creates a new array containing only elements that pass a test function.
+
+  ```javascript
+  const numbers = [1, 2, 3, 4, 5];
+
+  // Keep only even numbers
+  const evens = numbers.filter(num => num % 2 === 0);
+  console.log(evens); // [2, 4]
+
+  // Filter array of objects
+  const users = [
+    { id: 1, name: 'Alice', age: 25 },
+    { id: 2, name: 'Bob', age: 30 },
+    { id: 3, name: 'Charlie', age: 35 }
+  ];
+  const adults = users.filter(user => user.age >= 30);
+  console.log(adults); // [{ id: 2, name: 'Bob', age: 30 }, { id: 3, name: 'Charlie', age: 35 }]
+  ```
+
+- **`reduce()`**: reduces an array to a single value by applying a function to each element and accumulating the result.
+
+  ```javascript
+  const numbers = [1, 2, 3, 4, 5];
+
+  // Sum all numbers
+  const sum = numbers.reduce((accumulator, current) => accumulator + current, 0);
+  console.log(sum); // 15
+
+  // Find maximum value
+  const max = numbers.reduce((max, num) => num > max ? num : max, numbers[0]);
+  console.log(max); // 5
+
+  // Group objects by property
+  const transactions = [
+    { id: 1, type: 'debit', amount: 100 },
+    { id: 2, type: 'credit', amount: 50 },
+    { id: 3, type: 'debit', amount: 200 },
+    { id: 4, type: 'credit', amount: 150 }
+  ];
+
+  const grouped = transactions.reduce((groups, transaction) => {
+    const type = transaction.type;
+    if (!groups[type]) {
+      groups[type] = [];
+    }
+    groups[type].push(transaction);
+    return groups;
+  }, {});
+
+  console.log(grouped);
+  // {
+  //   debit: [
+  //     { id: 1, type: 'debit', amount: 100 },
+  //     { id: 3, type: 'debit', amount: 200 }
+  //   ],
+  //   credit: [
+  //     { id: 2, type: 'credit', amount: 50 },
+  //     { id: 4, type: 'credit', amount: 150 }
+  //   ]
+  // }
+  ```
+
+These methods can be chained for complex data transformations:
+
+```javascript
+const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+// Calculate sum of squares of even numbers
+const sumOfSquaresOfEvens = numbers
+  .filter(num => num % 2 === 0)  // Get even numbers: [2, 4, 6, 8, 10]
+  .map(num => num * num)         // Square them: [4, 16, 36, 64, 100]
+  .reduce((sum, square) => sum + square, 0); // Sum: 220
+
+console.log(sumOfSquaresOfEvens); // 220
+```
+
+## Solution 36
+*Reference: [Question 36](js-questions.md#question-36)*
+
+### Q. What is the difference between find() and filter()?
+
+- `find()` returns the first element that matches the condition, or undefined if none is found.
+- `filter()` returns an array of all elements that match the condition.
+
+Example
+```javascript
+const numbers = [5, 12, 8, 130, 44];
+
+// find() returns the first element that satisfies the condition
+const found = numbers.find(num => num > 10);
+console.log(found); // 12
+
+// filter() returns an array of all elements that satisfy the condition
+const filtered = numbers.filter(num => num > 10);
+console.log(filtered); // [12, 130, 44]
+```
+
+**Key differences:**
+1. **Return value**:
+  - `find()` returns the first matching element itself (or `undefined` if none found)
+  - `filter()` returns a new array containing all matching elements (or empty array if none found)
+2. **Performance**:
+  - `find()` stops iterating once it finds a match
+  - `filter()` always iterates through the entire array
+3. **Use cases**:
+  - Use `find()` when you need just one result (like finding a user by ID)
+  - Use `filter()` when you need all matching elements (like getting all active users)
+
+## Solution 37
+*Reference: [Question 37](js-questions.md#question-37)*
+
+### Q. How do you check if an array includes a specific value?
+
+JavaScript provides several methods to check if an array includes a specific value. Also there is a method to check if an array includes a specific value, which is `Array.includes(value)`.
+
+```javascript
+const fruits = ['apple', 'banana', 'orange', 'mango'];
+
+// 1. includes() method (ES6) - most straightforward
+const hasApple = fruits.includes('apple');
+console.log(hasApple); // true
+
+// includes() with fromIndex parameter (start searching from index 2)
+console.log(fruits.includes('apple', 2)); // false
+
+// 2. indexOf() method - returns index or -1
+const bananaIndex = fruits.indexOf('banana');
+console.log(bananaIndex); // 1
+console.log(fruits.indexOf('grape')); // -1
+
+const hasGrape = fruits.indexOf('grape') !== -1;
+console.log(hasGrape); // false
+
+// 3. some() method - for more complex conditions
+const hasM = fruits.some(fruit => fruit.startsWith('m'));
+console.log(hasM); // true
+```
+For primitive values, `includes()` is generally preferred as it's more readable and handles edge cases like `NaN` correctly. For complex conditions or finding objects, `some()` provides more flexibility.
+
+## Solution 38
+*Reference: [Question 38](js-questions.md#question-38)*
+
+### Q. How does the sort() method work, and how do you sort an array of numbers correctly?
+
+The sort() method sorts elements of an array in place and returns the sorted array. It's a mutating method, meaning it modifies the original array.
+`sort(compareFn)` mutates the array, sorting in-place by string conversion default—hence numbers sort lexicographically unless compareFn provided.
+  - Without compareFn: Converts to strings, Unicode order (e.g., [10, 2].sort() => [10, 2]).
+  
+  - With compareFn(a, b): Negative if a < b, positive if a > b, zero if equal.
+
+**For numbers**:
+```javascript
+const numbers = [10, 2, 5, 1, 100];
+
+// Ascending order
+numbers.sort((a, b) => a - b);
+console.log(numbers); // [1, 2, 5, 10, 100]
+
+// Descending order
+numbers.sort((a, b) => b - a);
+console.log(numbers); // [100, 10, 5, 2, 1]
+```
+**By default**, it converts elements to strings and sorts them based on UTF-16 code units:
+```javascript
+// Default sort converts to strings (lexicographic sorting)
+const fruits = ['banana', 'cherry', 'apple'];
+fruits.sort();
+console.log(fruits); // ['apple', 'banana', 'cherry']
+
+// PROBLEM: Default sort doesn't work as expected for numbers
+const numbers = [10, 2, 5, 1, 100];
+numbers.sort();
+console.log(numbers); // [1, 10, 100, 2, 5] (incorrect numeric sorting)
+```
+**Sorting objects by property:**
+```javascript
+const products = [
+  { name: 'Laptop', price: 1200 },
+  { name: 'Phone', price: 800 },
+  { name: 'Tablet', price: 300 }
+];
+
+// Sort by price (ascending)
+products.sort((a, b) => a.price - b.price);
+console.log(products);
+/* [
+  { name: 'Tablet', price: 300 },
+  { name: 'Phone', price: 800 },
+  { name: 'Laptop', price: 1200 }
+] */
+
+// Case-insensitive string sorting
+const names = ['David', 'alice', 'Bob'];
+names.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+console.log(names); // ['alice', 'Bob', 'David']
+```
+
+**Important notes about `sort()`:**
+- It modifies the original array (mutating method)
+- The time and space complexity is not guaranteed and varies by browser
+- Modern browsers typically use Timsort (O(n log n))
+
+## Solution 39
+*Reference: [Question 39](js-questions.md#question-39)*
+
+### Q. What are flat() and flatMap() methods?
+
+The flat() method flattens an array by one level, while the flatMap() method applies a function to each element of an array and flattens the result. They are both useful in flattening nested arrays.
+
+**`flat()`**: The `flat()` method creates a new array with all sub-array elements concatenated recursively up to the specified depth.
+
+```javascript
+const nestedArray = [1, 2, [3, 4, [5, 6]]];
+
+// Default depth is 1
+const flattened = nestedArray.flat();
+console.log(flattened); // [1, 2, 3, 4, [5, 6]]
+
+// Specify depth to flatten deeper nested arrays
+const fullyFlattened = nestedArray.flat(2);
+console.log(fullyFlattened); // [1, 2, 3, 4, 5, 6]
+
+// Use Infinity to flatten all nested arrays regardless of depth
+const deeplyNested = [1, [2, [3, [4, [5]]]]];
+console.log(deeplyNested.flat(Infinity)); // [1, 2, 3, 4, 5]
+
+// flat() also removes empty slots in arrays
+const sparseArray = [1, 2, , 4, 5];
+console.log(sparseArray.flat()); // [1, 2, 4, 5]
+```
+
+**`flatMap()`**: The `flatMap()` method combines `map()` and `flat()` operations with depth 1, providing better performance than calling them separately:
+
+```javascript
+const sentences = ['Hello world', 'JavaScript is fun'];
+
+// Split each sentence into words and flatten the result
+const words = sentences.flatMap(sentence => sentence.split(' '));
+console.log(words); // ['Hello', 'world', 'JavaScript', 'is', 'fun']
+
+// Equivalent to:
+// sentences.map(sentence => sentence.split(' ')).flat();
+
+// flatMap() is useful for adding or removing items during mapping
+const numbers = [1, 2, 3, 4];
+
+// Generate [1, 2, 2, 3, 3, 3, 4, 4, 4, 4]
+const repeated = numbers.flatMap(num => Array(num).fill(num));
+console.log(repeated); // [1, 2, 2, 3, 3, 3, 4, 4, 4, 4]
+
+// Filter out odd numbers while mapping even numbers to their doubles
+const evenDoubles = numbers.flatMap(num => 
+  num % 2 === 0 ? [num * 2] : []
+);
+console.log(evenDoubles); // [4, 8]
+```
+Both methods create new arrays without modifying the original, following JavaScript's functional programming patterns.
+
+## Solution 40
+*Reference: [Question 40](js-questions.md#question-40)*
+
+### Q. What are the ways to copy an array without mutating the original?
+
+JavaScript offers several ways to create copies of arrays without modifying the original.
+
+```javascript
+const original = [1, 2, 3, 4, 5];
+
+// 1. Spread operator (ES6) - most common and concise
+const copy1 = [...original];
+
+// 2. Array.from() method (ES6)
+const copy2 = Array.from(original);
+
+// 3. slice() method (no arguments copies the entire array)
+const copy3 = original.slice();
+
+// 4. concat() with an empty array
+const copy4 = [].concat(original);
+
+// 5. map() method
+const copy5 = original.map(x => x);
+
+// 6. Array.of() with spread
+const copy6 = Array.of(...original);
+
+// 7. JSON methods (deep copy, but limited to JSON-serializable data)
+const copy7 = JSON.parse(JSON.stringify(original));
+
+console.log(original); // [1, 2, 3, 4, 5] (unchanged)
+```
+
+**Important considerations for array copying:**
+1. **Shallow vs. Deep Copying**:
+  - Most methods above create shallow copies (nested objects/arrays share references)
+  - For deep copying of complex nested structures, use:
+    - Recursive functions
+    - `JSON.parse(JSON.stringify())` (with limitations)
+
+    ```javascript
+    // Shallow copy example with nested objects
+      const users = [{ name: 'Alice' }, { name: 'Bob' }];
+      const shallowCopy = [...users];
+
+      // Modifying the nested object affects both arrays
+      shallowCopy[0].name = 'Alicia';
+      console.log(users[0].name); // 'Alicia' (also changed)
+
+      // Deep copy example
+      const deepCopy = JSON.parse(JSON.stringify(users));
+      deepCopy[1].name = 'Bobby';
+      console.log(users[1].name); // 'Bob' (unchanged)
+    ```
+    
+- **Performance considerations**:
+  - Spread operator and `slice()` are generally the most performant
+  - `JSON.parse(JSON.stringify())` is significantly slower and has limitations (doesn't preserve functions, dates, undefined, etc.)
+
+The spread operator ([...array]) is typically the preferred method due to its readability and performance characteristics.

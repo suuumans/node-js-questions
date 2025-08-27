@@ -127,3 +127,35 @@ What are flat() and flatMap() methods?
 
 ## Question 40
 What are the ways to copy an array without mutating the original?
+
+# Objects in JavaScript
+
+## Question 41
+How do you create an object in JavaScript?
+
+## Question 42
+What is the difference between dot notation and bracket notation for accessing properties?
+
+## Question 43
+What does Object.assign() do?
+
+## Question 44
+How does the spread operator work with objects?
+
+## Question 45
+What is object destructuring?
+
+## Question 46
+What is a prototype in JavaScript?
+
+## Question 47
+What is the difference between __proto__ and prototype?
+
+## Question 48
+How do you iterate over an object's properties?
+
+## Question 49
+What are Object.keys(), Object.values(), and Object.entries()?
+
+## Question 50
+What is the difference between Object.freeze() and Object.seal()?

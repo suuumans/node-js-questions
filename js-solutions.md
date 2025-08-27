@@ -1591,3 +1591,472 @@ console.log(original); // [1, 2, 3, 4, 5] (unchanged)
   - `JSON.parse(JSON.stringify())` is significantly slower and has limitations (doesn't preserve functions, dates, undefined, etc.)
 
 The spread operator ([...array]) is typically the preferred method due to its readability and performance characteristics.
+
+## Solution 41
+*Reference: [Question 41](js-questions.md#question-41)*
+
+### Q. How do you create an object in JavaScript?
+
+In JavaScript, objects are collections of key-value pairs and can be created in several ways, each with specific advantages. Creating objects in JavaScript is versatile, as everything except primitives is an object under the hood. 
+
+**Primary ways to create**:
+
+- **Object Literal**: The most concise and efficient for static objects; preferred in modern code for readability.
+
+  ```javascript
+  const person = {
+    name: 'Alice',
+    age: 30,
+    greet() { return `Hello, ${this.name}!`; }
+  };
+  console.log(person.greet()); // 'Hello, Alice!'
+  ```
+- **Object Constructor**: Similar to the object literal, but with a constructor function. Using `new Object()`; less common but useful for dynamic creation.
+
+  ```javascript
+  function Person(firstName, lastName, age) {
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.age = age;
+    this.greet = function() {
+      return `Hello, I'm ${this.firstName}`;
+    };
+  }
+
+  const john = new Person("John", "Doe", 30);
+  console.log(john.greet()); // 'Hello, I'm John'
+  ```
+
+- **Classes**: Introduced in ES6, classes are a syntactic sugar for creating object constructors. They provide a more structured and readable way to define and work with objects.
+
+  ```javascript
+  class Person {
+    constructor(firstName, lastName, age) {
+      this.firstName = firstName;
+      this.lastName = lastName;
+      this.age = age;
+    }
+    
+    greet() {
+      return `Hello, I'm ${this.firstName}`;
+    }
+  }
+
+  const jane = new Person("Jane", "Smith", 28);
+  console.log(jane.greet()); // 'Hello, I'm Jane'
+  ```
+
+- **Object.create()**: Creates an object with a specified prototype and properties. Useful for prototypal inheritance.
+
+  ```javascript
+  const personProto = {
+    greet() {
+      return `Hello, I'm ${this.firstName}`;
+    }
+  };
+
+  const suman = Object.create(personProto);
+  suman.firstName = "Suman";
+  suman.lastName = "Sarkar";
+  console.log(suman.greet()); // 'Hello, I'm Suman'
+  ```
+
+- **Factory functions**: Functions that return objects. Commonly used for creating multiple instances of the same object type.
+
+  ```javascript
+  function createPerson(firstName, lastName, age) {
+    return {
+      firstName,
+      lastName,
+      age,
+      greet() {
+        return `Hello, I'm ${firstName}`;
+      }
+    };
+  }
+
+  const sarah = createPerson("Sarah", "Wilson", 32);
+  console.log(sarah.greet()); // 'Hello, I'm Sarah'
+  ```
+Each approach has specific use cases: literals for simple objects, constructors and classes for creating multiple similar objects, Object.create() for explicit prototype relationships, and factory functions for encapsulation without using 'new'.
+
+## Solution 42
+*Reference: [Question 42](js-questions.md#question-42)*
+
+### Q. What is the difference between dot notation and bracket notation for accessing properties?
+
+Both dot notation and bracket notation allow you to access object properties, but they have important differences.
+
+- **Dot notation (obj.prop):** Cleaner for static, valid identifiers (no numbers/spaces/special chars start). Faster lookup in engines like V8.
+  - Pros: Readable, concise.
+  - Cons: Can't use variables or computed keys.
+  ```javascript
+    const user = {
+      name: "Alex",
+      age: 30
+    };
+
+    console.log(user.name); // "Alex"
+  ```
+
+console.log(user.name); // "Alex"
+
+- **Bracket notation (obj['prop']):** Accepts strings, variables, or expressions; handles any key, including symbols or numbers.
+  - Pros: Dynamic, versatile (e.g., for loops).
+  - Cons: Verbose, potential for runtime errors if key doesn't exist.
+  ```javascript
+    const user = {
+      name: "Alex",
+      age: 30,
+      "user-id": "U123"
+    };
+
+    console.log(user["name"]); // "Alex"
+    console.log(user["user-id"]); // "U123"
+  ```
+
+## Solution 43
+*Reference: [Question 43](js-questions.md#question-43)*
+
+### Q. ## What does Object.assign() do?
+
+The `Object.assign()` method is a static method that copies the values of all enumerable own properties from one or more source objects to a target object. It returns the modified target object.
+
+- Mutates the target (first arg).
+- Overwrites existing keys with last source winning.
+- Copies values by reference for objects/arrays (shallow).
+- Ignores non-enumerable properties and prototypes.
+- Basic syntax: `Object.assign(target, ...sources);`
+
+```javascript
+const defaults = { theme: 'light', size: 'medium' };
+const userPrefs = { size: 'large' };
+const settings = Object.assign({}, defaults, userPrefs); // { theme: 'light', size: 'large' } – immutable merge
+```
+**ommon use cases:**
+- Creating shallow copies of objects
+- Merging configuration objects
+- Adding default properties
+- Implementing object composition patterns
+- Immutable updates in state management (though spread operator is now more common)
+
+For deep copying, you would need to use alternatives like `JSON.parse(JSON.stringify(obj))` (with limitations).
+
+## Solution 44
+*Reference: [Question 44](js-questions.md#question-44)*
+
+### Q. How does the spread operator work with objects?
+
+The spread operator (...) for objects, introduced in ES2018, provides a concise syntax for copying properties from one object to another within object literals. It creates shallow copies by enumerating the object's own enumerable properties.
+
+**Basic usage:**
+```javascript
+const person = { name: 'Alex', age: 30 };
+const personCopy = { ...person };
+
+console.log(personCopy); // { name: 'Alex', age: 30 }
+```
+
+## Solution 45
+*Reference: [Question 45](js-questions.md#question-45)*
+
+### Q. What is object destructuring?
+
+Object destructuring is a JavaScript feature that allows you to extract values from objects and assign them to variables. It is a concise way to access and work with object properties.
+
+```javascript
+const person = { name: 'Alice', age: 30, address: { city: 'NY' } };
+const { name, age, address: { city }, job = 'Engineer' } = person;
+// name='Alice', age=30, city='NY', job='Engineer'
+
+function greet({ name = 'Guest' }) {
+  return `Hello, ${name}!`;
+}
+greet(person); // 'Hello, Alice!'
+```
+
+## Solution 46
+*Reference: [Question 46](js-questions.md#question-46)*
+
+### Q. What is a prototype in JavaScript?
+
+A  prototype in JavaScript is a fundamental mechanism that enables inheritance and property sharing between objects. Every JavaScript object has a prototype (with the exception of objects created with Object.create(null)), which serves as a template or blueprint for that object.
+
+JavaScript is often described as a prototype-based language, rather than a class-based language (though ES6 added class syntax as syntactic sugar over prototypes).
+
+The prototype system works as follows:
+```javascript
+// Constructor function
+function Person(name) {
+  this.name = name;
+}
+
+// Adding a method to the prototype
+Person.prototype.greet = function() {
+  return `Hello, my name is ${this.name}`;
+};
+
+// Creating instances
+const alice = new Person('Alice');
+const bob = new Person('Bob');
+
+console.log(alice.greet()); // "Hello, my name is Alice"
+console.log(bob.greet());   // "Hello, my name is Bob"
+```
+Key points about prototypes:
+1. **Property Lookup Chain**: When you try to access a property on an object, JavaScript first looks for the property on the object itself. If it doesn't find it, it looks up the prototype chain.
+2. **Memory Efficiency**: Methods defined on the prototype are shared among all instances, saving memory as the method isn't duplicated for each object.
+3. **Dynamic Nature**: Modifying a prototype affects all objects that inherit from it, even those created before the modification.
+4. **Access to Constructor**: Every function in JavaScript automatically gets a `prototype` property when created, which is used when the function is used as a constructor.
+
+## Solution 47
+*Reference: [Question 47](js-questions.md#question-47)*
+
+### Q. What is the difference between ``prototype`` and ``__proto__``?
+
+prototype and `__proto__` both relate to inheritance but serve distinct roles—
+
+**`prototype`**:
+- It's a property of constructor functions (not regular objects)
+- It's the object that will become the prototype of instances created with that constructor
+- It defines what properties/methods will be inherited by instances
+**`__proto__`** (also accessible via Object.getPrototypeOf()):
+- It's a property of all objects (including functions)
+- It references the prototype of the constructor that created the object
+- It forms the link in the prototype chain for property lookup
+
+```javascript
+function Animal(name) {
+  this.name = name;
+}
+
+Animal.prototype.speak = function() {
+  return `${this.name} makes a sound`;
+};
+
+const dog = new Animal('Rex');
+
+// Relationships
+console.log(Animal.prototype === dog.__proto__); // true
+console.log(Object.getPrototypeOf(dog) === Animal.prototype); // true
+
+// Adding to prototype affects all instances
+Animal.prototype.eat = function() {
+  return `${this.name} is eating`;
+};
+
+console.log(dog.eat()); // "Rex is eating"
+```
+
+In modern JavaScript, we should use `Object.getPrototypeOf()` instead of `__proto__` as the latter is technically a non-standard feature (though widely supported and now standardized in ES6 for compatibility).
+
+## Solution 48
+*Reference: [Question 48](js-questions.md#question-48)*
+
+### Q. How do you iterate over an object's properties?
+
+Iterating objects requires handling own vs. inherited properties—options vary by need for keys, values, or control.
+
+- ** `for...in` loop**: Iterates over all enumerable properties, including those in the prototype chain.
+
+```javascript
+const person = {
+  name: 'Suman',
+  age: 25,
+  job: 'Developer'
+};
+
+for (const key in person) {
+  // Check if property belongs to the object itself, not its prototype
+  if (Object.prototype.hasOwnProperty.call(person, key)) {
+    console.log(`${key}: ${person[key]}`);
+  }
+}
+// Output:
+// name: Suman
+// age: 25
+// job: Developer
+```
+
+- **`Object.keys()` with a loop**: Gets own enumerable property names and iterates over them.
+
+```javascript
+const person = {
+  name: 'Suman',
+  age: 30,
+  job: 'Developer'
+};
+
+Object.keys(person).forEach(key => {
+  console.log(`${key}: ${person[key]}`);
+});
+// Same output as above
+```
+- **`Object.entries()` with destructuring**: Gets key-value pairs as arrays and iterates over them.
+```javascript
+const person = {
+  name: 'Suman',
+  age: 30,
+  job: 'Developer'
+};
+
+Object.entries(person).forEach(([key, value]) => {
+  console.log(`${key}: ${value}`);
+});
+// Same output as above
+```
+- **`Object.getOwnPropertyNames()` with a loop**: Gets all own property names, including non-enumerable ones.
+```javascript
+const person = {
+  name: 'Suman',
+  age: 30,
+  job: 'Developer'
+};
+
+Object.getOwnPropertyNames(person).forEach(key => {
+  console.log(`${key}: ${person[key]}`);
+});
+// Same output as above (assuming no non-enumerable properties)
+```
+Each method has its use cases, but Object.keys() or Object.entries() are generally preferred in modern JavaScript due to their clarity and the fact that they only include the object's own properties.
+
+## Solution 49
+*Reference: [Question 49](js-questions.md#question-49)*
+
+### Q. What are `Object.keys()`, `Object.values()`, and `Object.entries()`?
+
+These three methods, introduced in ES6 and ES8, provide convenient ways to extract and work with object properties.
+
+- **`Object.keys(obj)`** (ES6):
+  - Returns an array of the object's own enumerable property names (keys)
+  - Order is the same as for a `for...in` loop
+
+  ```javascript
+  const user = {
+    id: 1,
+    name: 'Alice',
+    email: 'alice@example.com'
+  };
+
+  const keys = Object.keys(user);
+  console.log(keys); // ['id', 'name', 'email']
+  ```
+
+- **`Object.values(obj)`** (ES8):
+  - Returns an array of the object's own enumerable property values
+  - Order corresponds to that of `Object.keys()`
+
+  ```javascript
+  const user = {
+    id: 1,
+    name: 'Alice',
+    email: 'alice@example.com'
+  };
+
+  const values = Object.values(user);
+  console.log(values); // [1, 'Alice', 'alice@example.com']
+  ```
+
+- **`Object.entries(obj)`** (ES8):
+  - Returns an array of arrays, each containing a key-value pair
+  - Each inner array is structured as [key, value]
+  - Order corresponds to that of `Object.keys()`
+
+  ```javascript
+  const user = {
+    id: 1,
+    name: 'Alice',
+    email: 'alice@example.com'
+  };
+
+  const entries = Object.entries(user);
+  console.log(entries);
+  // [
+  //   ['id', 1],
+  //   ['name', 'Alice'],
+  //   ['email', 'alice@example.com']
+  // ]
+
+  // Common use case: converting to Map
+  const userMap = new Map(Object.entries(user));
+  console.log(userMap.get('name')); // 'Alice'
+  ```
+  These methods are incredibly useful for transforming objects and working with them in a functional programming style:
+
+  ```javascript
+  const prices = {
+    banana: 1.25,
+    apple: 0.75,
+    orange: 1.00,
+    pear: 1.50
+  };
+
+  // Filter for items cheaper than $1
+  const affordableItems = Object.entries(prices)
+    .filter(([_, price]) => price < 1)
+    .map(([fruit]) => fruit);
+
+  console.log(affordableItems); // ['apple']
+  ```
+
+## Solution 50
+*Reference: [Question 50](js-questions.md#question-50)*
+
+### Q. What is the difference between `Object.freeze()` and `Object.seal()`?
+
+Both make objects immutable but to different degrees—vital for constants or preventing tampering in shared code.
+- `Object.freeze(obj)`:
+  - Prevents adding new properties
+  - Prevents removing existing properties
+  - Prevents modifying values of existing properties
+  - Prevents modifying property attributes (configurable, writable, etc.)
+  - Does not affect objects referenced by properties (shallow freeze)
+
+  ```javascript
+  const user = {
+    name: 'Alice',
+    preferences: {
+      theme: 'dark'
+    }
+  };
+
+  Object.freeze(user);
+
+  // These operations will fail in strict mode or silently fail in non-strict mode
+  user.name = 'Bob';           // Cannot modify existing property
+  user.age = 30;               // Cannot add new property
+  delete user.name;            // Cannot delete property
+
+  // However, nested objects are not frozen
+  user.preferences.theme = 'light'; // This works! (shallow freeze)
+  console.log(user.preferences.theme); // 'light'
+
+  console.log(Object.isFrozen(user)); // true
+  ```
+
+- `Object.seal(obj)`:
+  - Prevents adding new properties
+  - Prevents removing existing properties
+  - Allows modifying values of existing properties
+  - Prevents modifying property attributes
+  - Does not affect objects referenced by properties
+
+  ```javascript
+  const user = {
+    name: 'Alice',
+    preferences: {
+      theme: 'dark'
+    }
+  };
+
+  Object.seal(user);
+
+  user.name = 'Bob';           // This works! Can modify existing properties
+  user.age = 30;               // Cannot add new property
+  delete user.name;            // Cannot delete property
+
+  user.preferences.theme = 'light'; // This works (nested object not sealed)
+
+  console.log(Object.isSealed(user)); // true
+  console.log(user.name); // 'Bob'
+  ```

@@ -159,3 +159,20 @@ What are Object.keys(), Object.values(), and Object.entries()?
 
 ## Question 50
 What is the difference between Object.freeze() and Object.seal()?
+
+# Strings in JavaScript
+
+## Question 51
+What are the different ways to concatenate strings?
+
+## Question 52
+What are template literals, and how are they useful?
+
+## Question 53
+Explain string methods like indexOf(), includes(), and startsWith().
+
+## Question 54
+How do split() and join() work on strings?
+
+## Question 55
+What does the trim() method do, and why is it useful?

@@ -2060,3 +2060,205 @@ Both make objects immutable but to different degrees—vital for constants or pr
   console.log(Object.isSealed(user)); // true
   console.log(user.name); // 'Bob'
   ```
+
+  ## Solution 51
+*Reference: [Question 51](js-questions.md#question-51)*
+
+### Q. What are the different ways to concatenate strings?
+
+String concatenation in JavaScript combines strings into one, but methods vary in efficiency, readability, and mutability implications—crucial for large-scale apps to prevent performance bottlenecks like quadratic time in loops.
+
+- **Using the + operator**: The most traditional approach.
+  ```javascript
+  const firstName = "Suman";
+  const lastName = "Sarkar";
+  const fullName = firstName + " " + lastName; // "Suman Sarkar"
+  ```
+- **Using the += operator**: Useful for building strings incrementally.
+  ```javascript
+  let fullName = "";
+  fullName += "Suman"; // "Suman"
+  fullName += " " + "Sarkar"; // "Suman Sarkar"
+  ```
+- **Using the concat() method**: Can concatenate multiple strings at once.
+  ```javascript
+  const firstName = "Suman";
+  const lastName = "Sarkar";
+  const fullName = firstName.concat(" ", lastName); // "Suman Sarkar"
+  ```
+- **Using the template literal**: The most efficient way, especially for large-scale apps.
+  ```javascript
+  const firstName = "Suman";
+  const lastName = "Sarkar";
+  const fullName = `Hello, my name is ${firstName} ${lastName}`; // "Suman Sarkar"
+  ```
+- **Array Join()**: Collect in array, then join—optimal for loops to avoid intermediates
+  ```javascript
+  const firstName = "Suman";
+  const lastName = "Sarkar";
+  const fullName = [firstName, lastName].join(" "); // "Suman Sarkar"
+  ```
+- 1. **Using Array.prototype.reduce()**: For complex concatenation logic.
+  ```javascript
+  const fragments = ["Hello", "to", "the", "world"];
+  const result = fragments.reduce((acc, val) => acc + " " + val); // "Hello to the world"
+  ```
+
+In modern JavaScript development, template literals are generally preferred for readability and flexibility when working with variables and expressions.
+
+## Solution 52
+*Reference: [Question 52](js-questions.md#question-52)*
+
+### Q. What are template literals, and how are they useful?
+
+Template literals, introduced in ES6, are string literals using backticks (`) allowing embedded expressions, multi-line strings, and tagged templates—revolutionizing string creation for readability and expressiveness.
+
+- Basic Interpolation: `${expression}` evaluates inline.
+- Multi-Line: No need for \n; preserves formatting.
+- Tagged Templates: Function prefixes process literals (e.g., for sanitization).
+
+```javascript
+const name = 'Bob';
+const age = 25;
+const intro = `Hello, ${name}!
+You are ${age} years old.
+Status: ${age >= 18 ? 'Adult' : 'Minor'}`;
+// Multi-line output
+
+// Tagged
+function upper(strings, ...values) {
+  return strings.reduce((acc, str, i) => acc + str + (values[i] || '').toUpperCase(), '');
+}
+const tagged = upper`Hello, ${name}!`; // 'Hello, BOB!'
+```
+
+## Solution 53
+*Reference: [Question 53](js-questions.md#question-53)*
+
+### Q. Explain string methods like `indexOf()`, `includes()`, and `startsWith()`.
+
+These methods are part of JavaScript's string manipulation toolset, allowing for efficient searching and pattern matching within strings.
+
+- **`indexOf()`**: Returns the index of the first occurrence of a substring within a string, or -1 if not found.
+  ```javascript
+  const sentence = "JavaScript is amazing";
+  console.log(sentence.indexOf("Script")); // 4
+  console.log(sentence.indexOf("Java")); // 0
+  console.log(sentence.indexOf("PHP")); // -1
+
+  // Optional second parameter specifies the starting position for the search
+  console.log(sentence.indexOf("a")); // 1 (first occurrence)
+  console.log(sentence.indexOf("a", 2)); // 3 (first occurrence starting from index 2)
+  ```
+
+- **`includes()`**: Returns a boolean indicating whether a string contains a specified substring. Introduced in ES6.
+  ```javascript
+  const sentence = "JavaScript is amazing";
+  console.log(sentence.includes("Script")); // true
+  console.log(sentence.includes("PHP")); // false
+
+  // Optional second parameter specifies the position to start searching from
+  console.log(sentence.includes("a", 5)); // true (finds "a" after position 5)
+  console.log(sentence.includes("Java", 1)); // false (starts searching after "J")
+  ```
+
+- **`startsWith()`**: Returns a boolean indicating whether a string starts with a specified substring. Introduced in ES6.
+  ```javascript
+  const sentence = "JavaScript is amazing";
+  console.log(sentence.startsWith("Java")); // false
+  console.log(sentence.startsWith("JavaScript")); // true
+  ```
+
+There's also a complementary endsWith() method that checks if a string ends with a specified substring:
+```javascript
+const filename = "document.pdf";
+console.log(filename.endsWith(".pdf")); // true
+console.log(filename.endsWith(".doc")); // false
+
+// Optional parameter specifies length of string to consider
+console.log(filename.endsWith("ment", 8)); // true (checks first 8 characters: "document")
+```
+These methods are often used for:
+- Input validation (checking formats, patterns)
+- Conditional logic based on string content
+- Parsing text content
+- Filtering collections of strings
+
+The newer methods (includes(), startsWith(), endsWith()) generally provide more semantic clarity than the older indexOf() approach, making code more readable and intention-clear.
+
+## Solution 54
+*Reference: [Question 54](js-questions.md#question-54)*
+
+### Q. How do split() and join() work on strings?
+
+`split()` and `join()` are complementary methods that allow conversion between strings and arrays, enabling powerful text processing capabilities.
+
+- **`split()`**: The `split()` method divides a string into an array of substrings based on a specified separator.
+  ```javascript
+  const sentence = "The quick brown fox jumps over the lazy dog";
+
+  // Split by space
+  const words = sentence.split(" ");
+  console.log(words); 
+  // ["The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"]
+
+  // Split by character
+  const letters = "hello".split("");
+  console.log(letters); // ["h", "e", "l", "l", "o"]
+
+  // Split with limit parameter (second parameter)
+  const limitedWords = sentence.split(" ", 3);
+  console.log(limitedWords); // ["The", "quick", "brown"]
+
+  // Split on regex pattern
+  const csvData = "John,Doe,42,New York";
+  const fields = csvData.split(/,/);
+  console.log(fields); // ["John", "Doe", "42", "New York"]
+
+  // Special case: empty string separator splits into individual characters
+  console.log("hello".split("")); // ["h", "e", "l", "l", "o"]
+
+  // No separator returns the entire string as a single array element
+  console.log(sentence.split()); // ["The quick brown fox jumps over the lazy dog"]
+  ```
+
+- **`join()`**: The `join()` method creates and returns a new string by concatenating all elements in an array, separated by a specified separator.
+  ```javascript
+  const words = ["The", "quick", "brown", "fox"];
+
+  // Join with space separator
+  const sentence = words.join(" ");
+  console.log(sentence); // "The quick brown fox"
+
+  // Join with different separators
+  console.log(words.join("-")); // "The-quick-brown-fox"
+  console.log(words.join("")); // "Thequickbrownfox"
+  console.log(words.join(", ")); // "The, quick, brown, fox"
+
+  // Default separator is comma if not specified
+  console.log(words.join()); // "The,quick,brown,fox"
+
+  // Works with non-string array elements
+  const mixed = [1, "apple", true, null];
+  console.log(mixed.join(" and ")); // "1 and apple and true and null"
+  ```
+
+## Solution 55
+*Reference: [Question 55](js-questions.md#question-55)*
+
+### Q. What does the trim() method do, and why is it useful?
+
+The `trim()` method removes whitespace characters from both the beginning and end of a string, returning a new string without modifying the original. Whitespace includes spaces, tabs, newlines, and other characters that render as empty space.
+
+```javascript
+const text = "   Hello World!   ";
+console.log(text.trim()); // "Hello World!"
+console.log(messy.trimStart()); // 'Hello, world!   '
+console.log(messy.trimEnd()); // '   Hello, world!'
+
+const multiline = `
+  This is a multiline string
+  with extra whitespace.
+`;
+console.log(multiline.trim()); // "This is a multiline string\n  with extra whitespace."
+```

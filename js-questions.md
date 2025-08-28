@@ -176,3 +176,20 @@ How do split() and join() work on strings?
 
 ## Question 55
 What does the trim() method do, and why is it useful?
+
+# Control Flow
+
+## Question 56
+How does the if-else statement work, and when would you use a switch instead?
+
+## Question 57
+What are the differences between for, while, and do-while loops?
+
+## Question 58
+Explain break and continue statements in loops.
+
+## Question 59
+What is the difference between for-in and for-of loops?
+
+## Question 60
+How does the ternary operator work, and provide an example.

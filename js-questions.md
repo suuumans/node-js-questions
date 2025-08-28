@@ -149,7 +149,7 @@ What is object destructuring?
 What is a prototype in JavaScript?
 
 ## Question 47
-What is the difference between __proto__ and prototype?
+What is the difference between `__proto__` and prototype?
 
 ## Question 48
 How do you iterate over an object's properties?

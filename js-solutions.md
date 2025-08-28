@@ -2061,6 +2061,8 @@ Both make objects immutable but to different degrees—vital for constants or pr
   console.log(user.name); // 'Bob'
   ```
 
+# Strings
+
   ## Solution 51
 *Reference: [Question 51](js-questions.md#question-51)*
 
@@ -2261,4 +2263,271 @@ const multiline = `
   with extra whitespace.
 `;
 console.log(multiline.trim()); // "This is a multiline string\n  with extra whitespace."
+```
+
+# Control Flow
+
+## Solution 56
+*Reference: [Question 56](js-questions.md#question-56)*
+
+### Q. How does the if-else statement work, and when would you use a switch instead?
+
+The `if-else` statement is a fundamental control flow structure in JavaScript that executes a block of code based on whether a specified condition evaluates to true or false.
+
+Syntax:
+```javascript
+if (condition) {
+  // Code to execute if condition is true
+} else {
+  // Code to execute if condition is false
+}
+```
+For example:
+```javascript
+const temperature = 75;
+
+if (temperature > 90) {
+  console.log("It's hot outside!");
+} else if (temperature > 70) {
+  console.log("It's warm outside.");
+} else if (temperature > 50) {
+  console.log("It's cool outside.");
+} else {
+  console.log("It's cold outside!");
+}
+// Output: "It's warm outside."
+```
+
+**When to use switch instead:**
+You should use a switch statement when you're comparing a single value against multiple discrete, known values. The switch statement can be more readable and potentially more efficient when you have many possible conditions against the same variable.
+```javascript
+const day = new Date().getDay();
+
+switch (day) {
+  case 0:
+    console.log("Sunday");
+    break;
+  case 1:
+    console.log("Monday");
+    break;
+  case 2:
+    console.log("Tuesday");
+    break;
+  // ...and so on
+  default:
+    console.log("Unknown day");
+}
+```
+Key benefits of switch over if-else:
+- Cleaner syntax for multiple comparisons against a single value
+- Potentially better performance for many conditions (though modern JavaScript engines optimize both well)
+- Easier to read when dealing with many discrete cases
+- The `default` case provides a clear fallback
+Use if-else when:
+- Your conditions involve different variables or complex expressions
+- You have a small number of conditions
+- You need to test ranges of values instead of discrete values
+- Your conditions are not equality comparisons
+
+## Solution 57
+*Reference: [Question 57](js-questions.md#question-57)*
+
+### Q. What are the differences between for, while, and do-while loops?
+
+These loops control repetition, but differ in initialization, condition checking, and use cases—choosing the right one optimizes for clarity and prevents infinite loops or skipped iterations.
+
+**for loop:** The for loop is ideal when you know the number of iterations in advance:
+```javascript
+// syntax
+for (initialization; condition; iteration) {
+  // Code to execute
+}
+
+// example
+for (let i = 0; i < 5; i++) {
+  console.log(i); // Outputs 0, 1, 2, 3, 4
+}
+```
+
+**while loop:** The `while` loop is useful when you want to repeat a block of code until a certain condition is met:
+```javascript
+// syntax
+while (condition) {
+  // Code to execute
+}
+
+// example
+let i = 0;
+while (i < 5) {
+  console.log(i); // Outputs 0, 1, 2, 3, 4
+  i++;
+}
+```
+**do-while loop:** The `do-while` loop is similar to the `while` loop, but ensures that the code block is executed at least once:
+
+```javascript
+// syntax
+do {
+  // Code to execute
+} while (condition);
+
+// example
+let count = 0;
+do {
+  console.log(count); // Outputs 0, 1, 2, 3, 4
+  count++;
+} while (count < 5);
+```
+**Key differences:**
+- **Condition checking:**
+  - `for` and `while` check the condition before the first iteration
+  - `do-while` checks the condition after the first iteration, ensuring at least one execution
+- **Use cases:**
+  - `for`: Best for known iteration counts and when initialization, condition, and iteration are closely related
+  - `while`: Best for situations where the loop should continue until a condition changes
+  - `do-while`: Best when you want to ensure the loop body executes at least once
+- **Structure:**
+  - `for` consolidates initialization, condition, and iteration in one line
+  - `while` and `do-while` require manual initialization and iteration within the loop body
+
+
+## Solution 58
+*Reference: [Question 58](js-questions.md#question-58)*
+
+### Q. Explain break and continue statements in loops.
+
+`break` and `continue` alter loop flow—essential for optimization and control in iterative algorithms, like searching or filtering without full traversal.
+
+**`break`**: Exits the nearest enclosing loop/switch immediately, skipping remaining iterations.
+- Useful for early termination (e.g., found item).
+```javascript
+for (let i = 0; i < 10; i++) {
+  if (i === 5) {
+    break; // Exit the loop when i is 5
+  }
+  console.log(i);
+}
+// Output: 0, 1, 2, 3, 4
+```
+
+**`continue`**: Skips the rest of the current iteration, jumping to the next (or condition check).
+- Great for filtering invalid items without nested ifs.
+```javascript
+for (let i = 0; i < 10; i++) {
+  if (i % 2 === 0) {
+    continue; // Skip even numbers
+  }
+  console.log(i);
+}
+// Output: 1, 3, 5, 7, 9
+```
+
+## Solution 59
+*Reference: [Question 59](js-questions.md#question-59)*
+
+### Q. What are the differences between `for...in` and `for...of` loops?
+
+The `for...in` loop iterates over the enumerable properties of an object, while the `for...of` loop iterates over the iterable values of an object.
+
+**`for...in` loop:**
+const person = {
+  firstName: 'John',
+  lastName: 'Doe',
+  age: 30
+};
+
+for (const key in person) {
+  console.log(`${key}: ${person[key]}`);
+}
+// Output:
+// firstName: John
+// lastName: Doe
+// age: 30
+```
+
+**`for...of` loop:**
+const colors = ['red', 'green', 'blue'];
+
+for (const color of colors) {
+  console.log(color);
+}
+// Output:
+// red
+// green
+// blue
+```
+
+**Key differences:**
+- **Use cases:**
+  - `for-in`: Used for iterating over object properties (keys)
+  - `for-of`: Used for iterating over iterable values (elements)
+- **Behavior with arrays:**
+  - `for-in` will iterate over array indices as strings, plus any enumerable properties added to Array.prototype
+  - `for-of` will iterate over the actual values in the array
+
+```javascript
+const arr = ['a', 'b', 'c'];
+arr.customProp = 'custom';
+
+for (const key in arr) {
+  console.log(key); // "0", "1", "2", "customProp"
+}
+
+for (const value of arr) {
+  console.log(value); // "a", "b", "c" (customProp is ignored)
+}
+```
+- **Iterability:**
+  - `for-in` works with any object, including non-iterables
+  - `for-of` only works with iterable objects (Arrays, Strings, Maps, Sets, etc.)
+- **Order of iteration:**
+  - `for-in` doesn't guarantee a specific order of iteration
+  - `for-of` follows the iteration order defined by the iterable
+- **Performance:**
+  - `for-of` is generally faster for arrays than `for-in`
+
+**Best practices:**
+- Use `for-in` for iterating over object properties
+- Use `for-of` for iterating over array elements, strings, and other iterables
+- Avoid using `for-in` with arrays unless you specifically need to access properties beyond indices
+
+## Solution 60
+*Reference: [Question 60](js-questions.md#question-60)*
+
+### Q. How does the ternary operator work, and provide an example.
+
+The ternary operator (also called the conditional operator) is a concise way to write an if-else statement in a single line. It's the only JavaScript operator that takes three operands.
+
+**Syntax:** `condition ? expression1 : expression2;`
+
+The ternary operator evaluates the condition, and if it's true, it returns the value of expressionIfTrue; otherwise, it returns expressionIfFalse.
+
+**Basic example:**
+```javascript
+const age = 18;
+const canVote = age >= 18 ? 'You can vote' : 'You cannot vote';
+console.log(canVote); // "You can vote"
+```
+more examples:
+```javascript
+// Using ternary in a function return
+function getGreeting(hour) {
+  return hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+}
+
+console.log(getGreeting(9));  // "Good morning"
+console.log(getGreeting(14)); // "Good afternoon"
+console.log(getGreeting(20)); // "Good evening"
+
+// Using ternary with template literals
+const temperature = 75;
+console.log(`It's ${temperature > 80 ? 'hot' : 'pleasant'} outside.`);
+// "It's pleasant outside."
+
+// In a React component
+const Button = ({ isLoggedIn }) => (
+  <button>
+    {isLoggedIn ? 'Logout' : 'Login'}
+  </button>
+);
 ```

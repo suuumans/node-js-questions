@@ -193,3 +193,20 @@ What is the difference between for-in and for-of loops?
 
 ## Question 60
 How does the ternary operator work, and provide an example.
+
+# Closures
+
+## Question 61
+What is a closure in JavaScript?
+
+## Question 62
+Provide an example of a closure and explain how it works.
+
+## Question 63
+What are common use cases for closeures?
+
+## Question 64
+Explain the issue with closures in loops and how to fix it.
+
+## Question 65
+How can closures be used to implement the module pattern?

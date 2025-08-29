@@ -210,3 +210,35 @@ Explain the issue with closures in loops and how to fix it.
 
 ## Question 65
 How can closures be used to implement the module pattern?
+
+# Asynchronous JavaScript
+
+## Question 66
+What is the difference between synchronous and asynchronous code?
+
+## Question 67
+What are callbacks, and how are they used?
+
+## Question 68    
+What is callback hell, and how can it be avoided?
+
+## Question 69
+What are Promises, and what states can they be in?
+
+## Question 70    
+Explain Promise chaining with an example.
+
+## Question 71
+What is async/await, and how does it simplify asynchronous code?
+
+## Question 72
+How do you handle errors in async/await and Promises?
+
+## Question 73
+What are setTimeout() and setInterval(), and how do they differ?
+
+## Question 74
+Explain the JavaScript event loop.
+
+## Question 75
+What is the difference between microtasks and macrotasks?

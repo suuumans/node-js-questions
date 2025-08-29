@@ -2531,3 +2531,311 @@ const Button = ({ isLoggedIn }) => (
   </button>
 );
 ```
+
+# Closures
+
+## Solution 61
+*Reference: [Question 61](js-questions.md#question-61)*
+
+### Q. What is a closure in JavaScript?
+
+A closure is a fundamental JavaScript concept where a function retains access to its lexical scope even when executed outside that scope. In simpler terms, a closure is formed when a function "remembers" and can access variables from its parent scope, even after the parent function has finished executing.
+
+Closures happen naturally in JavaScript due to two key language features:
+- Functions can be nested within other functions
+- Inner functions have access to variables declared in their outer scope
+
+This creates a persistent lexical environment that stays connected to the function, allowing it to access variables that would otherwise be out of scope. The JavaScript engine maintains references to these outer variables, preventing them from being garbage collected as long as the inner function exists.
+
+## Solution 62
+*Reference: [Question 62](js-questions.md#question-62)*
+
+### Q. Provide an example of a closure and explain how it works.
+
+Here's a classic example: a counter factory that maintains private state.
+
+```javascript
+function createCounter() {
+  let count = 0; // Outer scope variable
+  return function increment() { // Inner function (closure)
+    count++; // Accesses and modifies outer 'count'
+    return count;
+  };
+}
+
+const counter1 = createCounter();
+console.log(counter1()); // 1
+console.log(counter1()); // 2
+
+const counter2 = createCounter(); // Independent closure
+console.log(counter2()); // 1 (separate 'count')
+```
+
+- How It Works Step-by-Step:
+  - `createCounter()` executes, declaring `count` in its scope.
+  - It returns the `increment` function, which closes over `count`—creating a reference to the outer scope's variable environment.
+  - After `createCounter()` finishes, its execution context pops off the stack, but `count` persists because `increment` references it.
+  - Each call to `counter1()` resolves `count` via the closure's scope chain, incrementing the captured variable.
+  - `counter2()` gets its own closure with a fresh `count`, demonstrating isolation.
+
+This works because JavaScript uses a "variable environment" record per function, linked in a chain. Debug tip: In DevTools, inspect the [[Scopes]] property of a function to see closed-over vars. Real-world: This pattern powers Redux thunks or debounce functions, where state must survive across invocations without globals.
+
+
+## Solution 63
+*Reference: [Question 63](js-questions.md#question-63)*
+
+### Q. What are common use cases for closeures?
+
+Closures are incredibly versatile in JavaScript, appearing in many design patterns and techniques:
+
+- **Data Privacy and Encapsulation**: Closures can be used to implement data privacy and encapsulation, where variables are hidden from the outside world and can only be accessed through functions.
+  ```javascript
+  function createBankAccount(initialBalance) {
+    let balance = initialBalance;
+      
+    return {
+      deposit: function(amount) {
+        balance += amount;
+        return balance;
+      },
+      withdraw: function(amount) {
+        if (amount > balance) {
+          throw new Error('Insufficient funds');
+        }
+        balance -= amount;
+        return balance;
+      },
+      getBalance: function() {
+        return balance;
+      }
+    };
+  }
+    
+  const account = createBankAccount(100);
+  account.deposit(50); // 150
+  account.withdraw(30); // 120
+  account.getBalance(); // 120
+  // balance is protected and cannot be accessed directly
+  ```
+- **Function Factories** - creating specialized functions: 
+  ```javascript
+  function createMultiplier(factor) {
+    return function(number) {
+      return number * factor;
+    };
+  }
+    
+  const double = createMultiplier(2);
+  const triple = createMultiplier(3);
+    
+  double(5); // 10
+  triple(5); // 15
+  ```
+
+- **Memoization** - caching function results:
+  ```javascript
+  function memoize(fn) {
+    const cache = {};
+      
+    return function(...args) {
+      const key = JSON.stringify(args);
+      if (!(key in cache)) {
+        cache[key] = fn(...args);
+      }
+      return cache[key];
+    };
+  }
+    
+  const expensiveCalculation = memoize(function(n) {
+    console.log("Computing...");
+    return n * n;
+  });
+    
+  expensiveCalculation(4); // Logs "Computing..." and returns 16
+  expensiveCalculation(4); // Returns 16 without logging
+  ```
+
+- **Event Handlers and Callbacks**: Attaching event listeners and callbacks
+  ```javascript
+  function setupButton(buttonId, message) {
+    const button = document.getElementById(buttonId);
+    button.addEventListener('click', function() {
+      alert(message); // Closure over message
+    });
+  }
+    
+  setupButton('submitBtn', 'Form submitted successfully!');
+  ```
+
+- **Currying and Partial Application**: Partially applying function arguments
+  ```javascript
+  function curry(fn) {
+    return function curried(...args) {
+      if (args.length >= fn.length) {
+        return fn.apply(this, args);
+      }
+      return function(...moreArgs) {
+        return curried.apply(this, args.concat(moreArgs));
+      };
+    };
+  }
+    
+  const sum = curry((a, b, c) => a + b + c);
+  sum(1)(2)(3); // 6
+  sum(1, 2)(3); // 6
+  ```
+
+- **Iterators and Generators**:
+  ```javascript
+  function createIterator(array) {
+    let index = 0;
+      
+    return {
+      next: function() {
+        return index < array.length ?
+          { value: array[index++], done: false } :
+          { done: true };
+      }
+    };
+  }
+    
+  const iterator = createIterator([1, 2, 3]);
+  iterator.next(); // { value: 1, done: false }
+  iterator.next(); // { value: 2, done: false }
+  iterator.next(); // { value: 3, done: false }
+  iterator.next(); // { done: true }
+  ```
+
+## Solution 64
+*Reference: [Question 64](js-questions.md#question-64)*
+
+### Q. Explain the issue with closures in loops and how to fix it.
+
+The classic issue with closures in loops occurs when creating functions inside a loop that reference loop variables. The problem is that closures capture variables by reference, not by value.
+
+**The Problem:**
+  ```javascript
+  function createButtons() {
+    for (var i = 0; i < 5; i++) {
+      var button = document.createElement('button');
+      button.textContent = 'Button ' + i;
+      
+      button.addEventListener('click', function() {
+        console.log('Button ' + i + ' clicked');
+      });
+      
+      document.body.appendChild(button);
+    }
+  }
+
+  createButtons();
+  // When clicked, all buttons will log "Button 5 clicked"
+  ```
+In this example, all button click handlers reference the same `i` variable. By the time any button is clicked, the loop has completed and `i` is 5, so all handlers log "Button 5 clicked".
+
+**Solution:**
+  - **Using an IIFE (Immediately Invoked Function Expression)** to create a new scope:
+  ```javascript
+  function createButtons() {
+    for (var i = 0; i < 5; i++) {
+      var button = document.createElement('button');
+      button.textContent = 'Button ' + i;
+        
+      (function(index) {
+        button.addEventListener('click', function() {
+          console.log('Button ' + index + ' clicked');
+        });
+      })(i);
+        
+      document.body.appendChild(button);
+    }
+  }
+  ```
+  - **Using `let` instade of `var`**:
+    ```javascript
+    function createButtons() {
+    for (let i = 0; i < 5; i++) {
+      const button = document.createElement('button');
+      button.textContent = 'Button ' + i;
+        
+      button.addEventListener('click', function() {
+        console.log('Button ' + i + ' clicked');
+      });
+        
+      document.body.appendChild(button);
+    }
+  }
+  ```
+
+The issue occurs because closures maintain references to variables, not copies of their values at creation time. Using let is the most elegant solution in modern JavaScript, as it creates a new lexical environment for each loop iteration.
+
+## Solution 65
+*Reference: [Question 65](js-questions.md#question-65)*
+
+### Q. How can closures be used to implement the module pattern?
+
+The module pattern is one of the most powerful applications of closures in JavaScript. It allows us to create private state and expose only selected functionality, simulating the private/public distinction found in other languages.
+
+Here's how to implement the module pattern using closures
+  ```javascript
+  const calculator = (function() {
+    // Private variables and functions
+    let result = 0;
+    
+    function validateNumber(num) {
+      if (typeof num !== 'number') {
+        throw new Error('Only numbers are allowed');
+      }
+    }
+    
+    // Public API
+    return {
+      add: function(num) {
+        validateNumber(num);
+        result += num;
+        return this;
+      },
+      
+      subtract: function(num) {
+        validateNumber(num);
+        result -= num;
+        return this;
+      },
+      
+      multiply: function(num) {
+        validateNumber(num);
+        result *= num;
+        return this;
+      },
+      
+      divide: function(num) {
+        validateNumber(num);
+        if (num === 0) {
+          throw new Error('Division by zero');
+        }
+        result /= num;
+        return this;
+      },
+      
+      getResult: function() {
+        return result;
+      },
+      
+      reset: function() {
+        result = 0;
+        return this;
+      }
+    };
+  })();
+
+  // Usage:
+  calculator.add(5).multiply(2).subtract(3).divide(2).getResult(); // 3.5
+  calculator.reset().add(10).getResult(); // 10
+  ```
+Key aspects of the module pattern:
+1. **IIFE (Immediately Invoked Function Expression)**: The entire module is wrapped in an IIFE that executes immediately, creating a closure.
+2. **Private members**: Variables and functions declared inside the IIFE but not returned are private, accessible only from inside the module.
+3. **Public API**: The returned object contains methods that can access the private variables through closure, providing a controlled interface.
+4. **State preservation**: The private variables maintain their values between function calls, creating persistent module state.
+
+With modern JavaScript, we now have native modules with import and export statements, but the closure-based module pattern is still useful for creating encapsulated components with private state, especially in environments where ES modules aren't supported or when you want finer control over what's exposed.

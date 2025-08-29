@@ -2839,3 +2839,481 @@ Key aspects of the module pattern:
 4. **State preservation**: The private variables maintain their values between function calls, creating persistent module state.
 
 With modern JavaScript, we now have native modules with import and export statements, but the closure-based module pattern is still useful for creating encapsulated components with private state, especially in environments where ES modules aren't supported or when you want finer control over what's exposed.
+
+# Asynchronous JavaScript
+
+## Solution 66
+*Reference: [Question 66](js-questions.md#question-66)*
+
+### Q. What is the difference between synchronous and asynchronous code?
+
+Synchronous and asynchronous code represent two fundamentally different approaches to program execution:
+**Synchronous Code:**
+- Executes line-by-line in sequence
+- Each operation blocks execution until it completes
+- Simple to understand and debug
+- Can cause performance issues with long-running operations
+  ```javascript
+  console.log("First");
+  const result = performLongCalculation(); // Blocks execution until complete
+  console.log("Second"); // Only runs after calculation finishes
+  console.log(result);
+  ```
+
+**Asynchronous Code:**
+- Operations can execute in parallel without blocking
+- Utilizes callbacks, promises, or async/await to handle future results
+- Better for performance when dealing with I/O operations, network requests, timers
+- More complex flow control and error handling
+  ```javascript
+  console.log("First");
+  fetchData().then(result => {
+    console.log(result); // Runs later when data is available
+  });
+  console.log("Second"); // Runs immediately without waiting for fetchData()
+  ```
+
+JavaScript is single-threaded but uses an event loop to handle asynchronous operations. This enables it to perform non-blocking operations despite running on a single thread. As observed in the Discord chat from Friday August 29, 2025, this is a key concept for modern web development and Node.js applications.
+
+## Solution 67
+*Reference: [Question 67](js-questions.md#question-67)*
+
+### Q. What are callbacks, and how are they used?
+
+Callbacks are functions passed as arguments to other functions, which are then invoked at a later time when a specific event occurs or an operation completes.
+**Key characteristics of callbacks:**
+- Functions passed as arguments to other functions
+- Executed at a later time after certain operations complete
+- Foundation of asynchronous programming in JavaScript
+- Can be anonymous functions or named functions
+
+```javascript
+function fetchData(url, callback) {
+  // Simulate async fetch
+  setTimeout(() => {
+    const data = { id: 1 }; // Mock response
+    if (data) callback(null, data); // Node-style: error-first
+    else callback(new Error('Failed'));
+  }, 1000);
+}
+
+fetchData('/api', (err, data) => {
+  if (err) console.error(err);
+  else console.log(data);
+});
+```
+
+## Solution 68
+*Reference: [Question 68](js-questions.md#question-68)*
+
+### Q. What is callback hell, and how can it be avoided?
+
+Callback hell (also known as "pyramid of doom") refers to a situation where multiple nested callbacks create deeply indented, hard-to-read, and difficult-to-maintain code. It typically occurs when sequential asynchronous operations depend on the results of previous operations.
+
+**Example of callback hell:**
+```javascript
+getUser(userId, function(user) {
+  getUserPosts(user.id, function(posts) {
+    getCommentsForFirstPost(posts[0].id, function(comments) {
+      getAuthorOfFirstComment(comments[0].authorId, function(author) {
+        getAuthorAddress(author.id, function(address) {
+          // Deep nesting continues...
+          console.log(address);
+        }, function(error) {
+          console.error("Error getting address:", error);
+        });
+      }, function(error) {
+        console.error("Error getting author:", error);
+      });
+    }, function(error) {
+      console.error("Error getting comments:", error);
+    });
+  }, function(error) {
+    console.error("Error getting posts:", error);
+  });
+}, function(error) {
+  console.error("Error getting user:", error);
+});
+```
+**Strategies to avoid callback hell:**
+- **Use named functions instead of anonymous functions:**
+  ```javascript
+  function handleUser(user) {
+    getUserPosts(user.id, handlePosts, handleError);
+  }
+
+  function handlePosts(posts) {
+    getCommentsForFirstPost(posts[0].id, handleComments, handleError);
+  }
+
+  function handleComments(comments) {
+    // And so on...
+  }
+
+  function handleError(error) {
+    console.error("An error occurred:", error);
+  }
+
+  getUser(userId, handleUser, handleError);
+  ```
+
+- **Use Promises to flatten the structure:**
+  ```javascript
+  getUserPromise(userId)
+    .then(user => getUserPostsPromise(user.id))
+    .then(posts => getCommentsForFirstPostPromise(posts[0].id))
+    .then(comments => getAuthorOfFirstCommentPromise(comments[0].authorId))
+    .then(author => getAuthorAddressPromise(author.id))
+    .then(address => console.log(address))
+    .catch(error => console.error("Error in promise chain:", error));
+  ```
+- **Use async/await for cleaner asynchronous code:**
+  ```javascript
+  async function getUserAddressFlow(userId) {
+    try {
+      const user = await getUserPromise(userId);
+      const posts = await getUserPostsPromise(user.id);
+      const comments = await getCommentsForFirstPostPromise(posts[0].id);
+      const author = await getAuthorOfFirstCommentPromise(comments[0].authorId);
+      const address = await getAuthorAddressPromise(author.id);
+      console.log(address);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  }
+
+  getUserAddressFlow(userId);
+  ```
+
+## Solution 69
+*Reference: [Question 69](js-questions.md#question-69)*
+
+### Q. What are Promises, and what states can they be in?
+
+Promises are objects representing the eventual completion or failure of an asynchronous operation. They provide a way to handle asynchronous operations in a more structured and predictable way.
+
+**A Promise can be in one of three states:**
+1. **Pending**: Initial state, neither fulfilled nor rejected.
+2. **Fulfilled**: The operation completed successfully, resulting in a value.
+3. **Rejected**: The operation failed, resulting in an error reason.
+
+Once a Promise is fulfilled or rejected, it's considered **settled** and cannot change to another state.
+```javascript
+// Creating a Promise
+const promise = new Promise((resolve, reject) => {
+  // Asynchronous operation
+  const success = true;
+  
+  if (success) {
+    resolve("Operation completed successfully"); // Changes state to fulfilled
+  } else {
+    reject(new Error("Operation failed")); // Changes state to rejected
+  }
+});
+
+// Consuming a Promise
+promise
+  .then(result => {
+    console.log("Success:", result); // Runs if fulfilled
+  })
+  .catch(error => {
+    console.error("Error:", error); // Runs if rejected
+  })
+  .finally(() => {
+    console.log("Promise settled"); // Runs in both cases
+  });
+```
+**Common Promise methods:**
+- `Promise.resolve(value)`: Creates an already fulfilled Promise
+- `Promise.reject(reason)`: Creates an already rejected Promise
+- `Promise.all(iterable)`: Returns a Promise that fulfills when all promises in the iterable fulfill
+- `Promise.race(iterable)`: Returns a Promise that settles as soon as one of the promises settles
+- `Promise.allSettled(iterable)`: Returns a Promise that resolves when all promises have settled
+- `Promise.any(iterable)`: Returns a Promise that fulfills as soon as one of the promises fulfills
+
+## Solution 70
+*Reference: [Question 70](js-questions.md#question-70)*
+
+### Q. Explain Promise chaining with an example.
+
+Promise chaining connects multiple async ops via `.then()`, where each returns a new promise—allowing sequential execution with flat structure, automatic error bubbling to `.catch()`.
+- Mechanics: `.then()` returns a new promise; resolve value passes to next.
+- Error Handling: Unhandled rejections propagate.
+
+```javascript
+fetch('/user')
+  .then(response => response.json()) // Parse
+  .then(user => fetch(`/posts/${user.id}`)) // Next fetch
+  .then(response => response.json())
+  .then(posts => console.log(`Posts: ${posts.length}`))
+  .catch(error => console.error('Chain failed:', error))
+  .finally(() => console.log('Cleanup'));
+```
+
+## Solution 71
+*Reference: [Question 71](js-questions.md#question-71)*
+
+### Q. What is async/await, and how does it simplify asynchronous code?
+
+Async/await is a modern JavaScript syntax introduced in ES2017 (ES8) that provides a more elegant way to work with Promises. It allows you to write asynchronous code that looks and behaves more like synchronous code, making it easier to read, write, and reason about.
+
+```javascript
+// Promise-based approach
+function fetchUserData() {
+  return fetch('https://api.example.com/users')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log(data);
+      return data;
+    });
+}
+
+// Async/await approach
+async function fetchUserData() {
+  const response = await fetch('https://api.example.com/users');
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+  const data = await response.json();
+  console.log(data);
+  return data;
+}
+```
+**How async/await simplifies asynchronous code:**
+1. **Improved readability**: Code flows top-to-bottom like synchronous code, eliminating nested `.then()` chains.
+2. **Cleaner error handling**: You can use traditional try/catch blocks instead of `.catch()` methods.
+3. **Easier debugging**: Stack traces are more meaningful, and you can set breakpoints more naturally.
+4. **Sequential execution clarity**: The sequential appearance of code matches its execution order.
+5. **Variable scoping**: Variables declared in the async function are available throughout its scope, avoiding the need for extra closures.
+6. **Avoiding callback hell**: It flattens the code structure, eliminating the pyramid of doom.
+
+Under the hood, async/await is syntactic sugar over Promises. An async function always returns a Promise, and the await keyword can only be used inside an async function.
+
+
+## Solution 72
+*Reference: [Question 72](js-questions.md#question-72)*
+
+### Q. How do you handle errors in async/await and Promises?
+
+Error handling in asynchronous JavaScript is crucial for creating robust applications. Both Promises and async/await provide mechanisms for handling errors, though with different syntax.
+
+- Promises:
+  - `.catch(onRejected)`: Catches upstream errors.
+  - Chain: Errors skip `.then()` until `.catch()`.
+  - Global: `window.addEventListener('unhandledrejection', e => { ... });` (browsers); `process.on('unhandledRejection')` (Node).
+
+- Async/Await:
+  - Wrap in `try { await ... } catch (err) { ... }`.
+  - Multiple awaits: One try-catch covers all.
+
+```javascript
+async function riskyOp() {
+  try {
+    const res = await fetch('/api');
+    if (!res.ok) throw new Error('Bad response');
+    return await res.json();
+  } catch (err) {
+    console.error('Handled:', err);
+    throw err; // Rethrow if needed
+  } finally {
+    console.log('Cleanup');
+  }
+}
+```
+
+## Solution 73
+*Reference: [Question 73](js-questions.md#question-73)*
+
+### Q. What are setTimeout() and setInterval(), and how do they differ?
+
+`setTimeout()` and `setInterval()` are Web API functions that allow you to execute code after a specified delay or at regular intervals, respectively. They are essential tools for handling time-based operations in JavaScript.
+
+**setTimeout():** Executes a function once after a specified delay.
+```javascript
+// Basic usage
+setTimeout(() => {
+  console.log('This runs after 2 seconds');
+}, 2000);
+
+// With arguments
+setTimeout((name) => {
+  console.log(`Hello, ${name}!`);
+}, 1000, 'John');
+
+// Storing the timeout ID to cancel it if needed
+const timeoutId = setTimeout(myFunction, 5000);
+// Later, if needed:
+clearTimeout(timeoutId); // Cancels the timeout if it hasn't executed yet
+```
+
+**setInterval():** Repeatedly executes a function at specified intervals until cleared.
+```javascript
+// Basic usage - runs every 3 seconds
+const intervalId = setInterval(() => {
+  console.log('This runs every 3 seconds');
+}, 3000);
+
+// With arguments
+const counterId = setInterval((count) => {
+  console.log(`Count: ${count}`);
+  counter++;
+  if (counter > 5) {
+    clearInterval(counterId); // Stop after 5 iterations
+  }
+}, 1000, 1);
+
+// To stop the interval
+clearInterval(intervalId);
+```
+
+**Key differences between setTimeout() and setInterval():**
+1. **Execution frequency**:
+  - `setTimeout()`: Executes the callback function once after the specified delay.
+  - `setInterval()`: Executes the callback function repeatedly at the specified interval.
+2. **Timing behavior**:
+  - `setTimeout()`: The delay is before the function executes.
+  - `setInterval()`: The interval includes the function execution time.
+3. **Use cases**:
+  - `setTimeout()`: For delayed actions or debouncing.
+  - `setInterval()`: For polling or animations.
+4. **Cancellation**:
+  - `setTimeout()`: Use `clearTimeout()` to cancel before execution.
+  - `setInterval()`: Use `clearInterval()` to stop repeated executions
+
+
+
+## Solution 74
+*Reference: [Question 74](js-questions.md#question-74)*
+
+### Q. Explain the JavaScript event loop.
+
+
+
+The JavaScript event loop is a key concept that enables JavaScript's non-blocking, asynchronous behavior despite being single-threaded. It's the mechanism that allows JavaScript to handle operations like UI events, network requests, and timers efficiently.
+**Core components of the JavaScript event loop architecture:**
+1. **Call Stack**: Where JavaScript code execution happens. Functions are pushed onto and popped off this stack as they are called and completed.
+2. **Web APIs**: Browser-provided interfaces (DOM, XMLHttpRequest, setTimeout, etc.) that handle operations outside the JavaScript engine.
+3. **Callback Queue (Task Queue)**: Where callbacks from asynchronous operations wait to be executed.
+4. **Microtask Queue**: A higher-priority queue for Promises and mutation observer callbacks.
+5. **Event Loop**: The mechanism that constantly checks if the call stack is empty and moves tasks from the queues to the stack.
+
+**How the event loop works:**
+```javascript
+console.log('Start'); // 1
+
+setTimeout(() => {
+  console.log('Timeout callback'); // 4
+}, 0);
+
+Promise.resolve().then(() => {
+  console.log('Promise resolved'); // 3
+});
+
+console.log('End'); // 2
+```
+
+The execution sequence is:
+1. 'Start' is logged immediately (synchronous code)
+2. setTimeout callback is registered with Web APIs
+3. Promise's then callback is registered as a microtask
+4. 'End' is logged immediately (synchronous code)
+5. Call stack is now empty, so the event loop checks queues
+6. Microtask queue is processed first: 'Promise resolved' is logged
+7. After all microtasks, the callback queue is checked: 'Timeout callback' is logged
+
+**The event loop algorithm (simplified):**
+1. Execute all synchronous code in the call stack.
+2. When the call stack is empty, check if there are any microtasks:
+  - If yes, execute all microtasks in order until the microtask queue is empty.
+3. Render UI updates if needed.
+14. If the call stack is still empty, take the first task from the callback queue and push it onto the call stack to execute.
+15. Repeat from step 1.
+
+This architecture allows JavaScript to handle I/O and time-based operations efficiently without blocking the main thread, which is crucial for maintaining responsive user interfaces.
+
+
+## Solution 75
+*Reference: [Question 75](js-questions.md#question-75)*
+
+### Q. What is the difference between microtasks and macrotasks?
+
+In JavaScript's event loop, tasks are categorized into microtasks and macrotasks (sometimes called tasks), which have different priorities and execution timing.
+
+**Macrotasks (Tasks):**
+- Executed one per event loop iteration
+- Include: setTimeout, setInterval, setImmediate, requestAnimationFrame, I/O operations, UI rendering, script execution
+
+**Microtasks:**
+- Executed until the microtask queue is empty after each macrotask completes
+- Higher priority than macrotasks
+- Include: Promise callbacks (.then, .catch, .finally), queueMicrotask(),     MutationObserver callbacks, process.nextTick (Node.js)
+
+**Execution order**:
+```javascript
+console.log('Script start'); // 1
+
+setTimeout(() => {
+  console.log('setTimeout'); // 5
+}, 0);
+
+Promise.resolve()
+  .then(() => {
+    console.log('Promise 1'); // 3
+  })
+  .then(() => {
+    console.log('Promise 2'); // 4
+  });
+
+console.log('Script end'); // 2
+```
+
+The execution order is:
+1. "Script start" (synchronous)
+2. "Script end" (synchronous)
+3. "Promise 1" (microtask)
+4. "Promise 2" (microtask - note that new microtasks generated during microtask execution are added to the current microtask queue)
+5. "setTimeout" (macrotask - executed in the next event loop iteration)
+
+**Important characteristics:**
+1. **Prioritization**: Microtasks have higher priority and are processed before the next macrotask.
+2. **Execution timing**: All microtasks in the queue (including newly added ones during execution) are processed before the next rendering or macrotask.
+3. **Starvation**: Excessive microtasks can starve macrotasks, potentially delaying UI updates.
+4. **Use cases**:
+  - Microtasks: For operations that should happen as soon as possible after the current script but before UI updates.
+  - Macrotasks: For operations that should be deferred until after UI updates or should be explicitly scheduled for the future.
+
+  ```javascript
+  button.addEventListener('click', () => {
+    console.log('Button clicked');
+    
+    // Macrotask - will run in a future iteration of the event loop
+    setTimeout(() => {
+      console.log('Timeout task');
+    }, 0);
+    
+    // Microtask - will run before the next render
+    Promise.resolve().then(() => {
+      console.log('Promise microtask');
+      
+      // Adding another microtask during microtask execution
+      Promise.resolve().then(() => {
+        console.log('Nested promise microtask');
+      });
+    });
+    
+    console.log('Click handler end');
+  });
+  ```
+
+Output when button is clicked:
+1. "Button clicked"
+2. "Click handler end"
+3. "Promise microtask"
+4. "Nested promise microtask"
+5. *UI rendering may happen here*
+6. "Timeout task"

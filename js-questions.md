@@ -242,3 +242,35 @@ Explain the JavaScript event loop.
 
 ## Question 75
 What is the difference between microtasks and macrotasks?
+
+# DOM Manipulation and Events
+
+## Question 76
+What is the DOM, and how does JavaScript interact with it?
+
+## Question 77
+What are the different ways to select elements in the DOM?
+
+## Question 78
+Explain getElementById() vs querySelector().
+
+## Question 79
+How do you create and insert new elements into the DOM?
+
+## Question 80
+How do you append or remove elements from the DOM?
+
+## Question 81
+How can you change attributes and styles of DOM elements?
+
+## Question 82
+What is the difference between innerHTML and textContent?
+
+## Question 83
+How do you add event listeners to elements?
+
+## Question 84
+Explain event bubbling vs event capturing.
+
+## Question 85
+What does event.preventDefault() do?

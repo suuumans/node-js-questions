@@ -3317,3 +3317,518 @@ Output when button is clicked:
 4. "Nested promise microtask"
 5. *UI rendering may happen here*
 6. "Timeout task"
+
+# DOM Manipulation
+
+## Solution 76
+*Reference: [Question 76](js-questions.md#question-76)*
+
+### Q. What is DOM, and how does JavaScript interact with it?
+
+The Document Object Model (DOM) is a programming interface for web documents. It represents the structure of HTML and XML documents as a tree-like model where each node represents a part of the document (elements, attributes, and text).
+
+The DOM serves as a bridge between web pages and programming languages like JavaScript, allowing dynamic content manipulation without page reloads
+
+DOM sample tree: `document → html → body → div → p → text`
+
+**JavaScript interacts with the DOM through:**
+1. **The document object**: JavaScript accesses the DOM primarily through the global `document` object, which represents the entire HTML document.
+2. **Selection methods**: JavaScript can find and select elements using methods like `getElementById()`, `querySelector()`, etc.
+3. **Manipulation methods**: Once elements are selected, JavaScript can modify content, attributes, and styles, or create/remove elements entirely.
+4. **Event handling**: JavaScript can listen for and respond to user interactions (clicks, key presses, etc.) using event listeners.
+
+```javascript
+// Selecting an element
+const heading = document.getElementById('main-title');
+
+// Manipulating content
+heading.textContent = 'Updated Title';
+
+// Changing styles
+heading.style.color = 'blue';
+
+// Event handling
+heading.addEventListener('click', function() {
+  alert('Heading was clicked!');
+});
+```
+
+This interaction enables dynamic web applications that can update content based on user actions without requiring page reloads. When a user interacts with a page, JavaScript can immediately update the DOM, creating responsive interfaces.
+
+## Solution 77
+*Reference: [Question 77](js-questions.md#question-77)*
+
+### Q. What are the different ways to select elements in the DOM?
+
+JavaScript offers multiple methods to select DOM elements, each with different use cases and specificity:
+
+**1. By ID (returns a single element):**
+```javascript
+const element = document.getElementById('unique-id');
+```
+
+**2. By Class Name (returns a live HTMLCollection):**
+```javascript
+const elements = document.getElementsByClassName('class-name');
+```
+
+**3. By Tag Name (returns a live HTMLCollection):**
+```javascript
+const paragraphs = document.getElementsByTagName('p');
+```
+
+**4. By Name attribute (returns a NodeList):**
+```javascript
+const elements = document.getElementsByName('field-name');
+```
+
+**. CSS Selectors (querySelector returns first match, querySelectorAll returns all matches as a NodeList):**
+```javascript
+// Select first matching element
+const firstElement = document.querySelector('.class-name');
+const specificElement = document.querySelector('#id .class > p');
+
+// Select all matching elements
+const allElements = document.querySelectorAll('div.container p');
+```
+
+**. Relative selection (navigating from an already selected element):**
+```javascript
+// Child elements
+const childElements = parentElement.children;
+const firstChild = parentElement.firstElementChild;
+const lastChild = parentElement.lastElementChild;
+
+// Parent elements
+const parent = childElement.parentElement;
+
+// Siblings
+const nextSibling = element.nextElementSibling;
+const previousSibling = element.previousElementSibling;
+```
+
+**7. Specialized selectors:**
+```javascript
+// Get active/focused element
+const activeElement = document.activeElement;
+
+// Get all forms
+const forms = document.forms;
+
+// Get all images
+const images = document.images;
+```
+
+When choosing a selection method, consider:
+- `querySelector`/`querySelectorAll` are powerful but slightly slower than direct methods
+- `getElementsBy*` methods return live collections that update automatically
+- Direct methods (`getElementById`, etc.) are faster for simple selections
+- CSS selectors provide the most flexibility for complex selections
+
+For modern web development, I find querySelector and querySelectorAll most versatile due to their CSS selector support, while getElementById remains the fastest method when a unique ID is available.
+
+## Solution 78
+*Reference: [Question 78](js-questions.md#question-78)*
+
+### Q. Explain getElementById() vs querySelector().
+
+Both select elements, but differ in syntax, return types, scope, and flexibility—getElementById for simple ID lookups, querySelector for CSS-style versatility.
+
+- `getElementById('id')`: Document-level only; returns single HTMLElement or null. Fast (hashed lookup); ID must be unique.
+  - Pros: Performant, simple.
+  - Cons: ID-only; no scoping (use on document).
+
+- `querySelector('selector')`: Accepts CSS selectors (e.g., '#id', '.class', '[attr=value]'); returns first matching Element or null. Can scope to elements (e.g., el.querySelector()).
+  - Pros: Powerful, modern (ES5+).
+  - Cons: Slower for complex selectors.
+
+```javascript
+const elem1 = document.getElementById('myId'); // <div id="myId">
+const elem2 = document.querySelector('#myId'); // Same as above
+const scoped = parentElem.querySelector('div.active'); // Scoped
+```
+
+## Solution 79
+*Reference: [Question 79](js-questions.md#question-79)*
+
+### Q. How do you create and insert new elements into the DOM?
+
+Creating and inserting new DOM elements involves a few steps: element creation, configuration, and insertion. Here's a comprehensive approach:
+
+**1. Element Creation:**
+```javascript
+// Create a new element
+const newParagraph = document.createElement('p');
+
+// Create a text node
+const textNode = document.createTextNode('This is a new paragraph.');
+
+// Create a document fragment (for batch operations)
+const fragment = document.createDocumentFragment();
+```
+
+**2. Element Configuration:**
+```javascript
+// Configure the new element
+// Set text content
+newParagraph.textContent = 'This is a new paragraph.';
+// Alternative to creating separate text node
+
+// Set attributes
+newParagraph.id = 'intro-paragraph';
+newParagraph.className = 'intro highlight';
+newParagraph.setAttribute('data-created', Date.now());
+
+// Add inline styles
+newParagraph.style.color = 'blue';
+newParagraph.style.fontSize = '16px';
+```
+
+**3. Inserting elements:**
+
+There are multiple methods for insertion, each with different positioning capabilities:
+```javascript
+// Append as last child (modern method)
+parentElement.append(newParagraph); // Can append multiple nodes and text
+parentElement.appendChild(newParagraph); // Only appends one node
+
+// Insert at specific position
+parentElement.insertBefore(newParagraph, referenceNode);
+
+// Modern insertion methods
+referenceNode.before(newParagraph); // Insert before reference node
+referenceNode.after(newParagraph);  // Insert after reference node
+referenceNode.replaceWith(newParagraph); // Replace reference node
+
+// Insert adjacent to an element
+element.insertAdjacentElement('beforebegin', newParagraph); // Before the element
+element.insertAdjacentElement('afterbegin', newParagraph);  // Inside, before first child
+element.insertAdjacentElement('beforeend', newParagraph);   // Inside, after last child
+element.insertAdjacentElement('afterend', newParagraph);    // After the element
+
+// Insert HTML directly (caution: security implications)
+element.insertAdjacentHTML('beforeend', '<p>New paragraph</p>');
+```
+**4. Batch operations with DocumentFragment:**
+For inserting multiple elements efficiently:
+```javascript
+const fragment = document.createDocumentFragment();
+
+for (let i = 0; i < 5; i++) {
+  const listItem = document.createElement('li');
+  listItem.textContent = `Item ${i+1}`;
+  fragment.appendChild(listItem);
+}
+
+// Only one DOM reflow occurs with this insertion
+document.querySelector('ul').appendChild(fragment);
+```
+
+**5. Using HTML templates:**
+```javascript
+// Define a template
+const template = document.createElement('template');
+template.innerHTML = `
+  <article class="post">
+    <h2 class="post-title"></h2>
+    <p class="post-content"></p>
+    <footer class="post-footer"></footer>
+  </article>
+`;
+
+// Use the template
+const newPost = template.content.cloneNode(true);
+newPost.querySelector('.post-title').textContent = 'New Post Title';
+newPost.querySelector('.post-content').textContent = 'Post content goes here...';
+document.body.appendChild(newPost);
+```
+
+## Solution 80
+*Reference: [Question 80](js-questions.md#question-80)*
+
+### Q. How do you append or remove elements from the DOM?
+
+DOM manipulation involves both adding (appending) and removing elements. Here's a comprehensive guide to these operations:
+
+### Appending Elements
+**1. Traditional methods:**
+```javascript
+// Append a node as the last child
+parentElement.appendChild(childElement);
+
+// Insert at a specific position
+parentElement.insertBefore(newElement, referenceElement);
+
+// Append multiple nodes and strings at the end
+parentElement.append(element1, 'Text node', element2);
+
+// Prepend multiple nodes at the beginning
+parentElement.prepend(element1, element2);
+
+// Insert before an element
+existingElement.before(newElement);
+
+// Insert after an element
+existingElement.after(newElement);
+
+// Add HTML to various positions
+element.insertAdjacentHTML('beforebegin', '<p>Before</p>');
+element.insertAdjacentHTML('afterbegin', '<p>First child</p>');
+element.insertAdjacentHTML('beforeend', '<p>Last child</p>');
+element.insertAdjacentHTML('afterend', '<p>After</p>');
+```
+
+### Removing Elements
+```javascript
+// Remove an element
+element.remove();
+
+// Remove a child element
+parentElement.removeChild(childElement);
+
+// Replace with another element
+oldElement.replaceWith(newElement);
+
+// Traditional replacement
+parentElement.replaceChild(newElement, oldElement);
+
+// Remove all children
+while (element.firstChild) {
+  element.removeChild(element.firstChild);
+}
+
+// Alternative clear methods
+element.innerHTML = ''; // Faster but has security implications
+element.textContent = ''; // For text-only content
+```
+
+## Solution 81
+*Reference: [Question 81](js-questions.md#question-81)*
+
+### Q. How can you change attributes and styles of DOM elements?
+
+JavaScript provides several ways to modify both attributes and styles of DOM elements:
+
+### Changing Attributes
+```javascript
+// Get a reference to an element
+const link = document.getElementById('myLink');
+
+// Using direct attribute properties
+link.href = 'https://example.com';
+link.id = 'newId';
+link.className = 'new-class'; // Note: this replaces all classes
+
+// Using setAttribute method
+link.setAttribute('href', 'https://example.com');
+link.setAttribute('data-custom', 'value'); // Custom data attributes
+
+// Toggle, add, or remove classes (more flexible than className)
+link.classList.add('active');
+link.classList.remove('disabled');
+link.classList.toggle('highlighted');
+link.classList.replace('old-class', 'new-class');
+
+// Check if an element has an attribute
+if (link.hasAttribute('target')) {
+  // Remove an attribute
+  link.removeAttribute('target');
+}
+```
+
+### Changing Styles
+```javascript
+// Get a reference to an element
+const box = document.querySelector('.box');
+
+// Using the style property (inline styles)
+box.style.backgroundColor = 'blue';
+box.style.width = '200px';
+box.style.marginTop = '20px';
+box.style.display = 'flex';
+
+// For hyphenated CSS properties, use camelCase in JavaScript
+box.style.borderRadius = '5px';  // Instead of border-radius
+box.style.fontSize = '16px';     // Instead of font-size
+
+// Or use bracket notation for hyphenated properties
+box.style['background-color'] = 'red';
+
+// Setting multiple styles at once
+Object.assign(box.style, {
+  color: 'white',
+  padding: '10px',
+  textAlign: 'center'
+});
+
+// Getting computed styles (actual applied styles, including from CSS)
+const computedStyle = window.getComputedStyle(box);
+console.log(computedStyle.backgroundColor);
+```
+
+## Solution 82
+*Reference: [Question 82](js-questions.md#question-82)*
+
+### Q. What is the difference between innerHTML and textContent?
+
+innerHTML and textContent both allow you to get or set content within an element, but they work in fundamentally different ways:
+
+### innerHTML
+```javascript
+// Gets or sets the HTML content inside an element
+const container = document.querySelector('.container');
+
+// Setting HTML content (parses and renders HTML tags)
+container.innerHTML = '<p>This is <strong>bold</strong> text</p>';
+
+// Getting HTML content (returns the HTML markup as a string)
+console.log(container.innerHTML); // "<p>This is <strong>bold</strong> text</p>"
+```
+
+### textContent
+```javascript
+// Gets or sets the text content of an element and all its descendants
+const container = document.querySelector('.container');
+
+// Setting text content (treats everything as plain text)
+container.textContent = '<p>This is <strong>bold</strong> text</p>';
+
+// Getting text content (returns just the text, no HTML tags)
+console.log(container.textContent); // "<p>This is <strong>bold</strong> text</p>"
+```
+**Key differences:**
+1. **HTML Parsing:**
+  - `innerHTML` parses and renders HTML tags
+  - `textContent` treats everything as plain text, showing tags literally
+2. **Security:**
+  - `innerHTML` can be vulnerable to XSS (Cross-Site Scripting) attacks if you insert user input
+  - `textContent` is safer as it doesn't parse HTML, automatically escaping any special characters
+3. **Performance:**
+  - `innerHTML` is slower as it needs to parse HTML and update the DOM tree
+  - `textContent` is faster as it's just setting text without parsing
+4. **Whitespace handling:**
+  - `textContent` preserves all whitespace
+  - `innerHTML` may normalize some whitespace according to HTML rules
+5. **Hidden elements:**
+  - `textContent` returns the content of all elements, including `<script>` and `<style>` elements and hidden elements
+  - `innerHTML` follows HTML parsing rules
+
+```javascript
+// Example showing the difference with user input
+const userInput = '<script>alert("XSS attack")</script>';
+
+// UNSAFE - will execute the script!
+// element.innerHTML = userInput;
+
+// SAFE - will display the script tag as text
+element.textContent = userInput;
+```
+
+There's also a related property called innerText that's similar to textContent but respects CSS styling and only returns visible text.
+
+## Solution 83
+*Reference: [Question 83](js-questions.md#question-83)*
+
+### Q. How do you add event listeners to elements?
+
+There are multiple ways to add event listeners to DOM elements in JavaScript, with `addEventListener` being the modern, preferred approach
+
+### Using addEventListener
+```javascript
+// Select the element
+const button = document.querySelector('#submitBtn');
+
+// Add event listener
+button.addEventListener('click', function(event) {
+  console.log('Button clicked!');
+  console.log(event); // Event object with details about the event
+});
+
+// Using arrow function
+button.addEventListener('mouseover', (event) => {
+  button.classList.add('hovered');
+});
+
+// You can add multiple listeners for the same event
+button.addEventListener('click', function() {
+  console.log('Second click handler');
+});
+
+// Using a named function (makes it easier to remove later)
+function handleMouseOut(event) {
+  button.classList.remove('hovered');
+}
+button.addEventListener('mouseout', handleMouseOut);
+
+// Removing an event listener (must use the same function reference)
+button.removeEventListener('mouseout', handleMouseOut);
+```
+
+## Solution 84
+*Reference: [Question 84](js-questions.md#question-84)*
+
+### Q. Explain event bubbling vs event capturing.
+
+Event propagation has two phases: capturing (top-down) and bubbling (bottom-up)—determines handler order in nested elements.
+- Capturing: Event starts at root, descends to target (rarely used, set options.capture=true).
+- Bubbling: Default; after target, ascends to root.
+- At Target: Both phases trigger if listeners in both.
+
+```javascript
+// HTML: <div id="outer"><div id="inner">Click</div></div>
+document.getElementById('outer').addEventListener('click', () => console.log('Outer bubble'), false); // Bubble
+document.getElementById('inner').addEventListener('click', () => console.log('Inner'), false);
+document.getElementById('outer').addEventListener('click', () => console.log('Outer capture'), true); // Capture
+
+// Click inner: Outer capture -> Inner -> Outer bubble
+```
+
+## Solution 85
+*Reference: [Question 85](js-questions.md#question-85)*
+
+### Q. What does event.preventDefault() do?
+
+`event.preventDefault()` is a method that cancels the default action that would occur as a result of the event. It doesn't stop event propagation; it only prevents the browser's default behavior associated with that event.
+
+```javascript
+// Example 1: Preventing form submission
+const form = document.querySelector('form');
+
+form.addEventListener('submit', function(event) {
+  event.preventDefault(); // Prevents the form from submitting to the server
+  
+  // Custom form validation or AJAX submission instead
+  const isValid = validateForm();
+  if (isValid) {
+    submitFormWithAjax();
+  }
+});
+
+// Example 2: Preventing link navigation
+const link = document.querySelector('a');
+
+link.addEventListener('click', function(event) {
+  event.preventDefault(); // Prevents navigating to the href URL
+  
+  // Custom action instead
+  console.log('Link was clicked, but navigation was prevented');
+  // Maybe open in a modal, or use client-side routing
+});
+
+// Example 3: Preventing context menu
+document.addEventListener('contextmenu', function(event) {
+  event.preventDefault(); // Prevents the default context menu
+  
+  // Maybe show a custom context menu instead
+  showCustomMenu(event.clientX, event.clientY);
+});
+
+// Example 4: Preventing drag and drop behavior
+const draggable = document.querySelector('.draggable');
+
+draggable.addEventListener('dragstart', function(event) {
+  // Allow custom drag behavior but prevent default
+  event.preventDefault();
+  // Implement custom drag logic
+});
+```

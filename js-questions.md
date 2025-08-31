@@ -274,3 +274,20 @@ Explain event bubbling vs event capturing.
 
 ## Question 85
 What does event.preventDefault() do?
+
+# AJAX and Fetch API
+
+## Question 86
+What is AJAX, and why is it used?
+
+## Question 87
+How does XMLHttpRequest work for making AJAX requests?
+
+## Question 88
+Explain the Fetch API and how to use it.
+
+## Question 89
+How do you handle responses and errors in Fetch?
+
+## Question 90
+What is CORS, and how does it affect AJAX requests?

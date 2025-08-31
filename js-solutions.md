@@ -3832,3 +3832,328 @@ draggable.addEventListener('dragstart', function(event) {
   // Implement custom drag logic
 });
 ```
+
+# AJAX and Fetch API
+
+## Solution 86
+*Reference: [Question 86](js-questions.md#question-86)*
+
+### Q. What is AJAX, and why is it used?
+
+AJAX (Asynchronous JavaScript and XML) is a technique for making HTTP requests asynchronously in the background, without blocking the user interface. It allows you to update parts of a webpage without reloading the entire page.
+
+**Key aspects of AJAX:**
+- **Asynchronous**: Requests don't block user interaction with the page
+- **Background communication**: Data is sent to and retrieved from the server without interfering with the current page
+- **Partial page updates**: Only specific elements need to be refreshed instead of the entire page
+
+**Why AJAX is used:**
+1. **Improved user experience**: Pages remain interactive while data loads
+2. **Reduced server load**: Only necessary data is transferred instead of entire page content
+3. **Faster interactions**: No need to reload and re-render the entire page
+4. **Seamless updates**: Content can be updated dynamically (like in social media feeds)
+5. **Better responsiveness**: Applications feel more like desktop applications
+
+## Solution 87
+*Reference: [Question 87](js-questions.md#question-87)*
+
+### Q. How does XMLHttpRequest work for making AJAX requests?
+
+**XMLHttpRequest (XHR)** is the original browser API for AJAX, a constructor creating objects to interact with servers asynchronously. It's event-based, allowing fine-grained control over requests and responses, and remains widely supported despite Fetch's rise.
+
+```javascript
+// 1. Create a new XMLHttpRequest object
+const xhr = new XMLHttpRequest();
+
+// 2. Configure the request
+xhr.open('GET', '/api/v1/get-all-problems-solved-by-user', true); // true for asynchronous
+
+// 3. Set up event handlers
+xhr.onreadystatechange = function() {
+  if (xhr.readyState === 4) { // 4 means request is complete
+    if (xhr.status === 200) {
+      // Request successful - parse and use the response
+      const response = JSON.parse(xhr.responseText);
+      console.log('Problems fetched:', response.data);
+    } else {
+      // Request failed
+      console.error('Error fetching problems:', xhr.status);
+    }
+  }
+};
+
+// 4. Set request headers (if needed)
+xhr.setRequestHeader('Content-Type', 'application/json');
+
+// 5. Send the request (with optional body data for POST requests)
+xhr.send();
+```
+**Key features:**
+- Supports various HTTP methods (GET, POST, PUT, DELETE, etc.)
+- Can handle different response types (text, JSON, XML, binary, etc.)
+- Provides detailed control over the request/response process
+- Supports synchronous requests (though these should be avoided)
+
+## Solution 88
+*Reference: [Question 88](js-questions.md#question-88)*
+
+### Q. Explain the Fetch API and how to use it.
+
+The Fetch API, introduced in ES6 (2015), is a modern, promise-based interface for making HTTP requests, replacing XHR with cleaner syntax, better defaults, and integration with async/await. It's built on Request/Response objects, supporting streams for large data.
+
+**Basic Fetch syntax:**
+```javascript
+fetch('/api/v1/get-all-problems-solved-by-user')
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return response.json(); // Parse JSON response
+  })
+  .then(data => {
+    console.log('Problems fetched successfully:', data);
+  })
+  .catch(error => {
+    console.error('Error fetching problems:', error);
+  });
+```
+
+**Key features of the Fetch API:**
+1. **Promise-based**: Uses JavaScript Promises for cleaner, more readable asynchronous code
+2. **Streamlined interface**: Simpler and more intuitive than XMLHttpRequest
+3. **Request/Response objects**: Powerful objects with useful methods and properties
+4. **Built-in JSON support**: Easy parsing with response.json()
+5. **Stream support**: Can work with streaming data
+
+**Making a POST request with Fetch:**
+```javascript
+fetch('/api/v1/problems', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    title: 'Two Sum',
+    difficulty: 'Easy',
+    description: 'Find two numbers that add up to a specific target.'
+  })
+})
+.then(response => response.json())
+.then(data => console.log('Problem created:', data))
+.catch(error => console.error('Error creating problem:', error));
+```
+
+**Using Fetch with async/await:**
+```javascript
+async function fetchProblemsSolvedByUser() {
+  try {
+    const response = await fetch('/api/v1/get-all-problems-solved-by-user');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Problems fetched successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching problems:', error);
+    throw error;
+  }
+}
+```
+
+## Solution 89
+*Reference: [Question 89](js-questions.md#question-89)*
+
+### Q. How do you handle response errors in Fetch?
+
+**Response handling and error handling** are crucial aspects of working with the Fetch API. Since Fetch returns Promises, it provides several ways to process successful responses and manage errors.
+
+**Response handling in Fetch:**
+```javascript
+fetch('/api/v1/get-all-problems-solved-by-user')
+  .then(response => {
+    // 1. Check if the response is OK (status in the range 200-299)
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    
+    // 2. Parse the response based on content type
+    return response.json(); // For JSON responses
+    // Other options:
+    // return response.text(); // For text responses
+    // return response.blob(); // For binary data
+    // return response.formData(); // For form data
+  })
+  .then(data => {
+    // 3. Work with the parsed data
+    console.log('Problems fetched successfully:', data);
+    
+    // Handle the response according to your API structure
+    if (data.success) {
+      return data.data; // Based on your ApiResponse structure
+    } else {
+      throw new Error(data.message || 'Unknown API error');
+    }
+  })
+  .catch(error => {
+    // 4. Handle any errors that occurred during the fetch
+    console.error('Error fetching problems:', error);
+  })
+  .finally(() => {
+    // 5. Code that should run regardless of success or failure
+    console.log('Fetch operation completed');
+  });
+```
+**Comprehensive error handling with async/await:**
+```javascript
+async function getAllProblemsSolvedByUser() {
+  try {
+    // 1. Make the request
+    const response = await fetch('/api/v1/get-all-problems-solved-by-user');
+    
+    // 2. Check for HTTP errors
+    if (!response.ok) {
+      // Handle different error status codes
+      if (response.status === 401) {
+        console.error('User not authenticated');
+        // Redirect to login page
+        window.location.href = '/login';
+        return;
+      }
+      if (response.status === 404) {
+        console.error('Resource not found');
+        return [];
+      }
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    
+    // 3. Parse the response
+    const data = await response.json();
+    
+    // 4. Check for API-level errors (based on your API structure)
+    if (!data.success) {
+      throw new Error(data.message || 'API returned an error');
+    }
+    
+    // 5. Return the successful data
+    return data.data; // Problems array based on your API response structure
+    
+  } catch (error) {
+    // 6. Handle all errors
+    console.error('Error in getAllProblemsSolvedByUser:', error);
+    
+    // 7. Optionally show user-friendly error message
+    displayErrorToUser('Failed to load your solved problems. Please try again later.');
+    
+    // 8. Return empty array or rethrow based on your needs
+    return [];
+  }
+}
+
+// Usage
+async function displayUserProblems() {
+  const problemsContainer = document.getElementById('problems-container');
+  problemsContainer.innerHTML = '<p>Loading...</p>';
+  
+  try {
+    const problems = await getAllProblemsSolvedByUser();
+    
+    if (problems.length === 0) {
+      problemsContainer.innerHTML = '<p>No problems solved yet. Start solving!</p>';
+      return;
+    }
+    
+    // Render problems
+    problemsContainer.innerHTML = problems.map(problem => `
+      <div class="problem-card">
+        <h3>${problem.title}</h3>
+        <span class="difficulty ${problem.difficulty.toLowerCase()}">${problem.difficulty}</span>
+      </div>
+    `).join('');
+    
+  } catch (error) {
+    problemsContainer.innerHTML = '<p>Failed to load problems. Please try again.</p>';
+  }
+}
+```
+
+## Solution 90
+*Reference: [Question 90](js-questions.md#question-90)*
+
+### Q. What CORS, and how does it affect AJAX requests?
+
+**CORS (Cross-Origin Resource Sharing)** is a security feature implemented by browsers that restricts web pages from making requests to a different domain than the one that served the web page. It helps prevent potentially malicious websites from accessing sensitive data across domains.
+
+**Key aspects of CORS:**
+1. **Same-Origin Policy**: By default, web browsers restrict cross-origin HTTP requests initiated from scripts.
+2. **CORS Headers**: The server must include specific HTTP headers to allow cross-origin requests.
+3. **Preflight Requests**: For certain requests, browsers send a preliminary OPTIONS request to check if the actual request is safe to send.
+
+**How CORS affects AJAX requests:**
+  - **Same-Origin Policy**: Cross-origin requests are blocked by default.
+  - **CORS Headers**: The server must include CORS headers to allow cross-origin requests.
+  - **Preflight Requests**: For certain requests, browsers send a preliminary OPTIONS request to check if the actual request is safe to send.
+
+**Example:**
+```javascript
+// Enable CORS for all routes
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://codeyudh.com');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
+// Or use the cors package
+const cors = require('cors');
+app.use(cors({
+  origin: 'https://codeyudh.com',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+```
+
+**Types of cross-origin requests:**
+1. **Simple requests**: Basic GET, POST, or HEAD requests with standard headers.
+2. **Preflighted requests**: Requests that first send an OPTIONS request to check if the actual request is allowed.
+  - Used for PUT/DELETE methods.
+  - Custom headers.
+  - Content types other than application/x-www-form-urlencoded, multipart/form-data, or text/plain.
+  ```javascript
+  // Enable CORS for all routes
+    app.use((req, res, next) => {
+      res.header('Access-Control-Allow-Origin', 'https://codeyudh.com');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      
+      // Handle preflight requests
+      if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+      }
+      
+      next();
+    });
+
+    // Or use the cors package
+    const cors = require('cors');
+    app.use(cors({
+      origin: 'https://codeyudh.com',
+      methods: ['GET', 'POST', 'PUT', 'DELETE'],
+      allowedHeaders: ['Content-Type', 'Authorization']
+    }));
+  ```
+
+**Workarounds for CORS issues during development:**
+1. **Proxy in development server**: Configure your frontend dev server to proxy API requests.
+2. **CORS browser extensions**: Temporarily disable CORS in the browser for testing (not for production).
+3. **Same-origin development**: Run both frontend and backend on the same origin (e.g., localhost:3000).
+
+**Note**: CORS can be a security concern, and it's important to ensure that the server and client are configured correctly to allow cross-origin requests.

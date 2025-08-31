@@ -291,3 +291,35 @@ How do you handle responses and errors in Fetch?
 
 ## Question 90
 What is CORS, and how does it affect AJAX requests?
+
+# ES6+ Features
+
+## Question 91
+Why were let and const introduced in ES6?
+
+## Question 92
+How do arrow functions handle the 'this' keyword differently?
+
+## Question 93
+Provide examples of array and object destructuring.
+
+## Question 94
+What are the spread and rest operators, and how are they different?
+
+## Question 95
+How do classes work in JavaScript?
+
+## Question 96
+Explain inheritance using classes in ES6.
+
+## Question 97
+What are JavaScript modules, and how do import/export work?
+
+## Question 98
+What is optional chaining, and when is it useful?
+
+## Question 99
+Explain nullish coalescing operator (??).
+
+## Question 100
+What is BigInt, and why was it added to JavaScript?

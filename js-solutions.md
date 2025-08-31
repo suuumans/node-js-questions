@@ -4157,3 +4157,659 @@ app.use(cors({
 3. **Same-origin development**: Run both frontend and backend on the same origin (e.g., localhost:3000).
 
 **Note**: CORS can be a security concern, and it's important to ensure that the server and client are configured correctly to allow cross-origin requests.
+
+
+# ES6+ Features
+
+## Solution 91
+*Reference: [Question 91](js-questions.md#question-91)*
+
+### Q. Why were `let` and `const` introduced in ES6?
+
+let and const were introduced in ES6 (ECMAScript 2015) to address several limitations of the original var keyword and to provide better scoping control.
+
+**Key reasons for introducing let and const:**
+  - **Block Scoping**: Unlike `var` which is function-scoped, `let` and `const` are block-scoped, meaning they're confined to the block they're declared in (if/for/while blocks, etc.). This prevents variable leakage and reduces bugs.
+
+  ```javascript
+  if (true) {
+    var x = 10; // function-scoped
+    let y = 20; // block-scoped
+    const z = 30; // block-scoped
+  }
+  console.log(x); // 10
+  console.log(y); // ReferenceError: y is not defined
+  console.log(z); // ReferenceError: z is not defined
+  ```
+
+  - **Temporal Dead Zone (TDZ)**: `let` and `const` aren't hoisted in the same way as `var`. While they technically are hoisted, you can't access them before declaration.
+
+    ```javascript
+    console.log(a); // undefined (hoisted)
+    console.log(b); // ReferenceError: Cannot access 'b' before initialization
+    console.log(c); // ReferenceError: Cannot access 'c' before initialization
+      
+    var a = 1;
+    let b = 2;
+    const c = 3;
+    ```
+  - **Constants**: `const` provides true immutable bindings (not values), preventing reassignment of variables.
+
+    ```javascript
+    const API_KEY = "abc123";
+    API_KEY = "xyz789"; // TypeError: Assignment to constant variable
+    ```
+
+  - **No Global Object Properties**: Unlike `var`, `let` and `const` declarations don't create properties on the global object.
+
+    ```javascript
+    var globalVar = "I'm global";
+    let scopedLet = "I'm scoped";
+    console.log(window.globalVar); // "I'm global"
+    console.log(window.scopedLet); // undefined
+    ```
+  - **Redeclaration Prevention**: Within the same scope, you cannot redeclare variables with `let` or `const`.
+
+    ```javascript
+    var x = 1;
+    var x = 2; // Works fine
+      
+    let y = 1;
+    let y = 2; // SyntaxError: Identifier 'y' has already been declared
+    ```
+
+**Conclusion**: `let` and `const` provide better scoping control, prevent variable leakage, and provide true immutable bindings for constants. They're a must-have for modern JavaScript development.
+
+## Solution 92
+*Reference: [Question 92](js-questions.md#question-92)*
+
+### Q. How do arrow functions handle the `this` keyword differently?
+
+Arrow functions (=>) handle `this` lexically, inheriting from the enclosing scope—unlike regular functions, where `this` is dynamic (call-site determined). This solves binding issues in callbacks, making code concise and predictable.
+
+- **Regular Functions**: `this` depends on invocation (e.g., obj.method() sets this=obj; standalone=global/undefined in strict).
+
+- **Arrow Functions**: `this` is lexically determined (e.g., obj.method sets this=obj; standalone=global/undefined in strict).
+
+**Examples**:
+
+```javascript
+// Regular function
+const obj = {
+  name: 'John',
+  greet: function() {
+    console.log(`Hello, ${this.name}!`);
+  }
+};
+obj.greet(); // Hello, John!
+
+// Arrow function
+const obj = {
+  name: 'John',
+  greet: () => {
+    console.log(`Hello, ${this.name}!`);
+  }
+};
+obj.greet(); // Hello, undefined!
+```
+
+## Solution 93
+*Reference: [Question 93](js-questions.md#question-93)*
+
+### Q. Provide examples of array and object destructuring.
+
+Destructuring is a powerful ES6 feature that allows you to extract values from arrays or properties from objects into distinct variables using a concise syntax.
+
+**Array destructuring:**
+```javascript
+// Basic array destructuring
+const numbers = [1, 2, 3, 4, 5];
+const [first, second, ...rest] = numbers;
+console.log(first);  // 1
+console.log(second); // 2
+console.log(rest);   // [3, 4, 5]
+
+// Skipping elements
+const colors = ['red', 'green', 'blue'];
+const [primary, , tertiary] = colors;
+console.log(primary);  // 'red'
+console.log(tertiary); // 'blue'
+
+// Default values
+const incomplete = [10];
+const [value1, value2 = 20] = incomplete;
+console.log(value1); // 10
+console.log(value2); // 20 (default value)
+
+// Swapping variables without temporary variable
+let a = 5, b = 10;
+[a, b] = [b, a];
+console.log(a, b); // 10, 5
+
+// Function that returns an array
+function getCoordinates() {
+  return [12.34, 56.78];
+}
+const [longitude, latitude] = getCoordinates();
+console.log(longitude, latitude); // 12.34, 56.78
+```
+
+**Object destructuring**
+```javascript
+// Basic object destructuring
+const person = {
+  name: 'John',
+  age: 30,
+  city: 'New York',
+  country: 'USA'
+};
+
+const { name, age } = person;
+console.log(name, age); // 'John', 30
+
+// Assigning to new variable names
+const { name: fullName, age: years } = person;
+console.log(fullName, years); // 'John', 30
+
+// Default values
+const incomplete = { title: 'JavaScript Book' };
+const { title, author = 'Unknown' } = incomplete;
+console.log(title, author); // 'JavaScript Book', 'Unknown'
+
+// Nested object destructuring
+const metadata = {
+  title: 'My Post',
+  author: {
+    firstName: 'Jane',
+    lastName: 'Doe'
+  }
+};
+
+const { 
+  title: postTitle, 
+  author: { firstName, lastName }
+} = metadata;
+
+console.log(postTitle);  // 'My Post'
+console.log(firstName);  // 'Jane'
+console.log(lastName);   // 'Doe'
+
+// Combining with rest operator
+const { name: userName, ...userDetails } = person;
+console.log(userName);     // 'John'
+console.log(userDetails);  // { age: 30, city: 'New York', country: 'USA' }
+
+// Function parameters destructuring
+function printUserInfo({ name, age, address = 'Unknown' }) {
+  console.log(`${name} is ${age} years old and lives at ${address}`);
+}
+
+printUserInfo({ name: 'Alice', age: 25 }); // "Alice is 25 years old and lives at Unknown"
+```
+**Practical Combined Examples**
+```javascript
+// Destructuring in function returns
+function getUser() {
+  return {
+    id: 123,
+    name: 'Alex',
+    posts: ['Hello World', 'ES6 Features']
+  };
+}
+
+const { id, posts: [firstPost] } = getUser();
+console.log(id, firstPost); // 123, 'Hello World'
+
+// Destructuring in iterations
+const users = [
+  { id: 1, name: 'John' },
+  { id: 2, name: 'Jane' }
+];
+
+for (const { id, name } of users) {
+  console.log(`User ${id}: ${name}`);
+}
+// "User 1: John"
+// "User 2: Jane"
+
+// Destructuring API responses
+const response = {
+  status: 200,
+  data: {
+    items: [
+      { id: 1, name: 'Item 1' },
+      { id: 2, name: 'Item 2' }
+    ],
+    pagination: {
+      total: 10,
+      page: 1
+    }
+  }
+};
+
+const { 
+  status,
+  data: { 
+    items: [firstItem],
+    pagination: { total }
+  } 
+} = response;
+
+console.log(status, firstItem, total); // 200, { id: 1, name: 'Item 1' }, 10
+```
+
+Destructuring is extremely useful for working with complex data structures, API responses, and creating cleaner function signatures, as evidenced by many modern JavaScript frameworks.
+
+## Solution 94
+*Reference: [Question 94](js-questions.md#question-94)*
+
+### Q. What are the spread and rest operators, and how are they different?
+
+The spread (`...`) and rest (`...`) operators share the same syntax but serve opposite purposes. They were introduced in ES6 and expanded in later versions.
+
+### Spread Operator
+The spread operator expands an iterable (array, string) or an object into individual elements or properties.
+
+**Uses of the spread operator:**
+- **Array spreading**:
+  ```javascript
+  // Combining arrays
+  const arr1 = [1, 2, 3];
+  const arr2 = [4, 5, 6];
+  const combined = [...arr1, ...arr2]; // [1, 2, 3, 4, 5, 6]
+    
+  // Creating shallow copies
+  const original = [1, 2, 3];
+  const copy = [...original];
+    
+  // Inserting elements
+  const numbers = [1, 2, 4, 5];
+  const withThree = [...numbers.slice(0, 2), 3, ...numbers.slice(2)];
+  console.log(withThree); // [1, 2, 3, 4, 5]
+  ```
+
+- **Object spreading** (added in ES2018):
+  ```javascript
+  // Merging objects
+  const defaults = { theme: 'light', size: 'medium' };
+  const userPrefs = { size: 'large' };
+  const settings = { ...defaults, ...userPrefs }; // { theme: 'light', size: 'large' }
+    
+  // Shallow cloning with modifications
+  const user = { name: 'John', age: 30 };
+  const updatedUser = { ...user, age: 31 }; // { name: 'John', age: 31 }
+  ```
+
+- **Function arguments**:
+  ```javascript
+  const numbers = [1, 2, 3];
+  console.log(Math.max(...numbers)); // 3
+    
+  function sum(a, b, c) {
+    return a + b + c;
+  }
+  console.log(sum(...numbers)); // 6
+  ```
+
+### Rest Operator
+The rest operator collects multiple elements and condenses them into a single array or object.
+
+**Uses of the rest operator:**
+- **Function parameters**:
+  ```javascript
+  // Collecting remaining arguments
+  function sum(first, ...rest) {
+    return first + rest.reduce((acc, val) => acc + val, 0);
+  }
+  console.log(sum(1, 2, 3, 4)); // 10 (1 + 9)
+    
+  // Collecting all arguments
+  function logAll(...args) {
+    args.forEach(arg => console.log(arg));
+  }
+  logAll('a', 'b', 'c'); // logs 'a', 'b', 'c'
+  ```
+- **Array destructuring**:
+  ```javascript
+  const [first, second, ...others] = [1, 2, 3, 4, 5];
+  console.log(first);  // 1
+  console.log(second); // 2
+  console.log(others); // [3, 4, 5]
+  ```
+
+- **Object destructuring**:
+  ```javascript
+  const { name, ...rest } = { name: 'Alice', age: 25, city: 'New York' };
+  console.log(name); // 'Alice'
+  console.log(rest); // { age: 25, city: 'New York' }
+  ```
+
+### Key Differences
+1. **Purpose**:
+  - Spread: Expands elements (one → many).
+  - Rest: Collects elements (many → one).
+2. **Position**:
+  - Spread: Can be used anywhere in an array/object literal or function call.
+  - Rest: Must be the last parameter in a function declaration or destructuring pattern.
+3. **Usage context**:
+  - Spread: Used in array/object literals and function calls.
+  - Rest: Used in function parameters and destructuring assignments.
+4. **Number of uses**:
+  - Spread: Can be used multiple times in the same expression.
+  - Rest: Can only appear once at the end of the parameter list or destructuring pattern.
+
+### Example Combining Both
+```javascript
+function fetchData(endpoint, { headers = {}, ...otherOptions } = {}) {
+  const defaultHeaders = { 'Content-Type': 'application/json' };
+  
+  return fetch(endpoint, {
+    headers: { ...defaultHeaders, ...headers },
+    ...otherOptions
+  });
+}
+
+// Using the function
+fetchData('https://api.example.com/data', {
+  headers: { Authorization: 'Bearer token123' },
+  method: 'POST',
+  body: JSON.stringify({ name: 'John' })
+});
+```
+These operators have become essential in modern JavaScript development, particularly for immutable data patterns in frameworks like React and for creating flexible function interfaces.
+
+## Solution 95
+*Reference: [Question 95](js-questions.md#question-95)*
+
+### Q. How do classes work in JavaScript?
+
+JavaScript classes, introduced in ES6, provide a cleaner, more familiar syntax for creating constructor functions and prototypal inheritance. However, they're primarily syntactic sugar over JavaScript's existing prototype-based inheritance.
+
+### Class Basics
+
+```javascript
+class Person {
+  // Class constructor
+  constructor(name, age) {
+    this.name = name;
+    this.age = age;
+  }
+
+  // Instance method
+  greet() {
+    return `Hello, my name is ${this.name} and I am ${this.age} years old.`;
+  }
+
+  // Static method (called on the class, not instances)
+  static createAnonymous() {
+    return new Person('Anonymous', 0);
+  }
+
+  // Getter
+  get profile() {
+    return `${this.name}, ${this.age}`;
+  }
+
+  // Setter
+  set profile(value) {
+    [this.name, this.age] = value.split(',');
+    this.age = parseInt(this.age, 10);
+  }
+}
+
+// Creating instances
+const john = new Person('John', 30);
+console.log(john.greet()); // "Hello, my name is John and I am 30 years old."
+
+// Using static method
+const anonymous = Person.createAnonymous();
+console.log(anonymous.name); // "Anonymous"
+
+// Using getter and setter
+console.log(john.profile); // "John, 30"
+john.profile = "Jane,25";
+console.log(john.name, john.age); // "Jane", 25
+```
+
+### Inheritance
+
+```javascript
+class Employee extends Person {
+  constructor(name, age, position, salary) {
+    // Call parent constructor
+    super(name, age);
+    
+    this.position = position;
+    this.salary = salary;
+  }
+
+  // Override parent method
+  greet() {
+    return `${super.greet()} I work as a ${this.position}.`;
+  }
+
+  // New method
+  promote(newPosition, salaryIncrease = 0) {
+    this.position = newPosition;
+    this.salary += salaryIncrease;
+    return `Promoted to ${this.position} with salary ${this.salary}`;
+  }
+}
+
+const dev = new Employee('Alex', 28, 'Developer', 75000);
+console.log(dev.greet()); // "Hello, my name is Alex and I am 28 years old. I work as a Developer."
+console.log(dev.promote('Senior Developer', 15000)); // "Promoted to Senior Developer with salary 90000"
+```
+### Key Features and Limitations
+- **Hoisting**: Unlike function declarations, classes are not hoisted. They must be defined before they are used.
+- **Strict Mode**: Class bodies are automatically in strict mode.
+- **Class Fields** (newer feature, part of ES2022).
+  ```javascript
+  class Counter {
+    // Public field
+    count = 0;
+      
+    // Private field (with # prefix)
+    #privateValue = 42;
+      
+    increment() {
+      this.count++;
+      this.#privateValue++;
+    }
+      
+    getPrivateValue() {
+      return this.#privateValue;
+    }
+      
+    // Static field
+    static instances = 0;
+      
+    constructor() {
+      Counter.instances++;
+    }
+  }
+  ```
+  - **`this` Binding**: Methods aren't automatically bound to the instance. For event handlers, you might need to bind manually or use arrow functions:
+    ```javascript
+    class Button {
+      constructor(text) {
+        this.text = text;
+        this.element = document.createElement('button');
+        this.element.textContent = text;
+          
+        // This won't work properly as 'this' will be the element, not the class instance
+        this.element.addEventListener('click', this.handleClick);
+          
+        // Solutions:
+        // 1. Bind the method
+        this.element.addEventListener('click', this.handleClick.bind(this));
+          
+        // 2. Use arrow function
+        this.element.addEventListener('click', () => this.handleClick());
+      }
+        
+      handleClick() {
+        console.log(`Button ${this.text} clicked`);
+      }
+    }
+    ```
+  - **Under the Hood**: Classes are special functions. `typeof Person` returns "function".
+
+## Solution 96
+*Reference: [Question 96](js-questions.md#question-96)*
+
+### Q. Explain inheritance using classes in ES6.
+
+ES6 (ECMAScript 2015) introduced a class syntax that provides a cleaner, more intuitive way to implement inheritance in JavaScript. Despite the syntactic sugar, under the hood, it still uses JavaScript's prototype-based inheritance.
+
+```javascript
+// Parent class
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+  
+  speak() {
+    return `${this.name} makes a noise.`;
+  }
+  
+  eat() {
+    return `${this.name} is eating.`;
+  }
+}
+
+// Child class inheriting from Animal
+class Dog extends Animal {
+  constructor(name, breed) {
+    super(name); // Call the parent constructor
+    this.breed = breed;
+  }
+  
+  // Override the parent method
+  speak() {
+    return `${this.name} barks!`;
+  }
+  
+  // Add a new method
+  fetch() {
+    return `${this.name} is fetching the ball!`;
+  }
+}
+
+// Usage
+const animal = new Animal('Generic Animal');
+console.log(animal.speak()); // "Generic Animal makes a noise."
+
+const dog = new Dog('Rex', 'German Shepherd');
+console.log(dog.speak()); // "Rex barks!"
+console.log(dog.eat());   // "Rex is eating." (inherited from Animal)
+console.log(dog.fetch()); // "Rex is fetching the ball!"
+```
+
+**Key aspects of class inheritance in ES6:**
+1. **`extends` keyword** - Used to create a child class that inherits from a parent class.
+2. **`super` keyword** - Used to:
+  - Call the parent constructor (`super()` in constructor)
+  - Call parent methods (`super.methodName()` in methods)
+3. **Method overriding** - Child classes can redefine methods inherited from the parent.
+4. **Constructor inheritance** - Child classes must call `super()` before using `this` if they have their own constructor.
+5. **Static members** - Static methods and properties are also inherited.
+```javascript
+class Shape {
+  static create(type) {
+    return new Shape(type);
+  }
+  
+  constructor(type) {
+    this.type = type;
+  }
+}
+
+class Circle extends Shape {
+  constructor(radius) {
+    super('circle');
+    this.radius = radius;
+  }
+}
+
+// Static method is inherited
+const circle = Circle.create('circle');
+```
+
+## Solution 97
+*Reference: [Question 97](js-questions.md#question-97)*
+
+### Q. What are JavaScript modules, and how do import/export work?
+
+JavaScript modules are a way to organize code by splitting it into separate files, each containing related functionality. They help create more maintainable codebases by providing encapsulation and preventing global namespace pollution.
+
+- **Modules**: Strict mode by default; top-level await (ES2022); static analysis for imports.
+- **export**: Named (`export const x=1;`) or default (`export default class {...}`); multiple named, one default.
+- **import**: Static (`import {x} from './mod.js';`), default (`import Mod from './mod.js';`), all (`import * as Mod from './mod.js';`), dynamic (`import('./mod.js').then(...) `ES2020).
+
+Example (mod.js):
+```javascript
+// mod.js
+export const PI = 3.14; // Named
+export default function area(r) { return PI * r ** 2; } // Default
+```
+Usage:
+```javascript
+import circleArea, { PI } from './mod.js';
+console.log(circleArea(5)); // Default as circleArea
+```
+
+## Solution 98
+*Reference: [Question 98](js-questions.md#question-98)*
+
+### Q. What is optional chaining, and when is it useful?
+
+Optional chaining (?.) short-circuits property access if preceding is null/undefined—preventing TypeErrors, simplifying null checks in nested objects.
+- **Syntax**: `obj?.prop?.method()?.[index]`
+- **Behavior**: Returns undefined if nullish, else value. With () or [].
+- **Useful**: Deep nesting (e.g., API responses), optional props.
+
+```javascript
+const user = { address: { city: 'NY' } };
+console.log(user?.address?.city); // 'NY'
+console.log(user?.contact?.phone); // undefined (no error)
+console.log(user?.getName?.()); // Calls if exists, else undefined
+```
+
+## Solution 99
+*Reference: [Question 99](js-questions.md#question-99)*
+
+### Q. Explain nullish coalescing operator (??).
+
+Nullish coalescing (??) returns right operand if left is null/undefined—unlike || (falsy like 0/''). ES2020, for safe defaults without overriding valid falsies.
+
+- **Syntax**: `left ?? right`—short-circuits if left non-nullish.
+- **Chaining**: With ?.: `obj?.prop ?? 'default'`.
+
+```javascript
+const count = 0;
+console.log(count ?? 10); // 0 (falsy but not nullish)
+console.log(count || 10); // 10 (|| catches falsy)
+
+const config = { port: null };
+console.log(config.port ?? 3000); // 3000
+```
+
+## Solution 100
+*Reference: [Question 100](js-questions.md#question-100)*
+
+### Q. What is BigInt, and why was it added to JavaScript?
+
+BigInt (ES2020) handles arbitrary-precision integers beyond Number's safe limit (2^53-1), using n suffix or BigInt()—for cryptography, finance, large IDs.
+
+- **Why Added**: Number is float (IEEE 754), loses precision for big ints (e.g., 253 + 1 === 253). BigInt no precision loss.
+- **Usage**: 1n + 2n; ops with BigInt only (no mix with Number without conversion). No decimals.
+- **Methods**: Limited Math (e.g., no sqrt); bitwise full support.
+
+```javascript
+const big = 12345678901234567890n;
+const sum = big + 1n; // 12345678901234567891n
+console.log(2n ** 100n); // Huge number, exact
+
+console.log(Number(big)); // Approx for small, else BigInt.asIntN
+```

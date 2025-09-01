@@ -346,3 +346,20 @@ What are Web Workers? How do they help with application performance?
 
 ## Question 107
 What is the Shadow DOM?
+
+# Performance & Memory
+
+## Question 108
+What is event delegation? Why is it a useful pattern for performance?
+
+## Question 109
+Explain debouncing and throttling. Provide a practical use case for each.
+
+## Question 110
+What is memoization, and how would you implement a memoized function?
+
+## Question 111
+What are some common causes of memory leaks in JavaScript, and how can you prevent them?
+
+## Question 112
+Explain how garbage collection works in JavaScript at a high level.

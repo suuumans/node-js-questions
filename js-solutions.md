@@ -5423,3 +5423,268 @@ customElements.define('custom-card', CustomCard);
     <fancy-panel slot="panel">Panel 2</fancy-panel>
   </fancy-tabs>
   ```
+
+# Performance & Memory
+
+## Solution 108
+*Reference: [Question 108](js-questions.md#question-108)*
+
+### Q. What is event delegation? Why is it a useful pattern for performance?
+
+Event delegation is a pattern where you attach a single event listener to a parent element instead of attaching multiple listeners to individual child elements. This technique leverages the event bubbling mechanism in the DOM.
+
+```javascript
+// Without event delegation (inefficient)
+document.querySelectorAll('.button').forEach(button => {
+  button.addEventListener('click', function(e) {
+    console.log('Button clicked:', this.textContent);
+  });
+});
+
+// With event delegation (efficient)
+document.querySelector('.button-container').addEventListener('click', function(e) {
+  if (e.target.matches('.button')) {
+    console.log('Button clicked:', e.target.textContent);
+  }
+});
+```
+**Why it's beneficial for performance:**
+1. **Reduced memory usage**: Instead of creating separate handler functions for potentially hundreds of elements, you create just one.
+2. **Fewer DOM attachments**: Significantly reduces the number of event listeners registered with the browser.
+3. **Dynamic elements support**: Works automatically with elements added to the DOM after initial page load without needing to attach new listeners.
+4. **Less code maintenance**: Centralizes event handling logic in one place.
+5. **Improved page initialization time**: Faster page load as fewer operations are needed during initialization.
+
+Event delegation is particularly valuable in applications with large lists, tables, or dynamic content where elements are frequently added or removed.
+
+## Solution 109
+*Reference: [Question 109](js-questions.md#question-109)*
+
+### Q. Explain debouncing and throttling. Provide a practical use case for each.
+
+Debouncing and throttling are techniques to control how many times a function is executed over time, particularly useful for performance optimization with frequently triggered events.
+
+### Debouncing
+Debouncing ensures a function executes only after a specified time has passed since it was last invoked. If the function is called again before the time period elapses, the timer resets.
+```javascript
+function debounce(func, delay) {
+  let timeoutId;
+  return function(...args) {
+    const context = this;
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      func.apply(context, args);
+    }, delay);
+  };
+}
+
+// Usage example
+const debouncedSearch = debounce(function(query) {
+  fetchSearchResults(query);
+}, 500);
+
+searchInput.addEventListener('input', function(e) {
+  debouncedSearch(e.target.value);
+});
+```
+**Practical use case:** Search input where you want to avoid making API calls on every keystroke, but wait until the user pauses typing.
+
+### Throttling
+Throttling ensures a function executes at most once in a specified time period, regardless of how many times it's invoked.
+```javascript
+function throttle(func, limit) {
+  let inThrottle = false;
+  return function(...args) {
+    const context = this;
+    if (!inThrottle) {
+      func.apply(context, args);
+      inThrottle = true;
+      setTimeout(() => {
+        inThrottle = false;
+      }, limit);
+    }
+  };
+}
+
+// Usage example
+const throttledResize = throttle(function() {
+  recalculateLayout();
+}, 250);
+
+window.addEventListener('resize', throttledResize);
+```
+**Practical use case:** Window resize or scroll events where you want to ensure expensive calculations run at a controlled rate rather than on every pixel of movement.
+
+
+## Solution 110
+*Reference: [Question 110](js-questions.md#question-110)*
+
+### Q. What is memoization, and how would you implement a memoized function?
+
+Memoization is an optimization technique that stores the results of expensive function calls and returns the cached result when the same inputs occur again. This is particularly useful for computationally expensive functions with repetitive inputs.
+```javascript
+function memoize(fn) {
+  const cache = new Map();
+  
+  return function(...args) {
+    // Create a key from the arguments
+    const key = JSON.stringify(args);
+    
+    // Check if we have a cached result
+    if (cache.has(key)) {
+      console.log('Returning from cache');
+      return cache.get(key);
+    }
+    
+    // Calculate the result
+    const result = fn.apply(this, args);
+    
+    // Cache the result
+    cache.set(key, result);
+    console.log('Calculated and cached');
+    
+    return result;
+  };
+}
+
+// Example: Memoized factorial function
+const factorial = memoize(function(n) {
+  if (n === 0 || n === 1) return 1;
+  return n * factorial(n - 1);
+});
+
+console.log(factorial(5)); // Calculated and cached: 120
+console.log(factorial(5)); // Returning from cache: 120
+console.log(factorial(6)); // Uses cached value for 5, only calculates 6*5: 720
+```
+For more complex use cases, you might want to implement:
+1. **Cache size limiting**: To prevent memory issues with unbounded caches
+2. **Cache expiration**: For values that might become stale
+3. **Custom key generation**: For complex objects that can't be directly stringified.
+
+```javascript
+function advancedMemoize(fn, { maxSize = 100, keyFn = JSON.stringify } = {}) {
+  const cache = new Map();
+  const keys = [];
+  
+  return function(...args) {
+    const key = keyFn(args);
+    
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+    
+    const result = fn.apply(this, args);
+    
+    // Manage cache size
+    if (keys.length >= maxSize) {
+      const oldestKey = keys.shift();
+      cache.delete(oldestKey);
+    }
+    
+    keys.push(key);
+    cache.set(key, result);
+    
+    return result;
+  };
+}
+```
+Memoization is particularly valuable for recursive functions, complex calculations, and expensive data processing operations.
+
+## Solution 111
+*Reference: [Question 111](js-questions.md#question-111)*
+
+### Q. What are some common causes of memory leaks in JavaScript, and how can you prevent them?
+
+Memory leaks occur when unused objects remain referenced, evading garbage collection (GC)—causing gradual memory growth, slowdowns, or crashes in long-running apps.
+
+**Common Causes**:
+- **Forgotten Event Listeners**: Listeners keep closures alive; DOM removal doesn't auto-unregister.
+- **Global Variables**: Undeclared vars or window props persist indefinitely.
+- **Closures Capturing Unneeded Refs**: Inner functions hold outer scopes (e.g., unused large objects in callbacks).
+- **Timers/Intervals Not Cleared**: setInterval keeps running, referencing scopes.
+- **Detached DOM Nodes**: Removed nodes with refs (e.g., in arrays) linger.
+- **Caches Without Eviction**: Growing Maps/arrays without size limits.
+
+### Prevention best practices:
+1. Use strict mode to catch accidental globals
+2. Implement proper cleanup functions for components
+3. Leverage modern tools like React's useEffect cleanup
+4. Profile memory usage with Chrome DevTools Memory profiler
+5. Use WeakMap and WeakSet for caching references that shouldn't prevent garbage collection
+6. Follow the dispose pattern by returning cleanup functions
+
+## Solution 112
+*Reference: [Question 112](js-questions.md#question-112)*
+
+### Q. Explain how garbage collection works in JavaScript at a high level.
+
+JavaScript's garbage collection is an automatic memory management system that frees memory occupied by objects that are no longer reachable.
+
+### Key concepts:
+#### 1. Reference tracking
+JavaScript tracks whether objects are "reachable" from root objects (like the global object or currently executing functions). An object is considered reachable if:
+- It's directly referenced by a root
+- It's referenced by another reachable object
+  ```javascript
+  // Global reference to an object (reachable)
+  const globalObject = { data: 'important' };
+
+  function createAndForget() {
+    // Local object, becomes unreachable when function ends
+    const localObject = { data: 'temporary' };
+    
+    // This object remains reachable via globalObject
+    globalObject.child = { data: 'persistent' };
+  }
+  ```
+#### 2. Mark and Sweep algorithm
+The most common garbage collection algorithm in modern JavaScript engines:
+1. **Mark phase**: The collector starts from roots and marks all reachable objects by recursively following references
+2. **Sweep phase**: All unmarked objects in memory are considered unreachable and are freed.
+#### 3. Generational collection
+Modern engines use optimizations based on the "generational hypothesis" - most objects die young:
+
+1. **Young generation (Nursery)**: New objects start here, collected frequently
+2. **Old generation (Tenured)**: Objects that survive multiple young collections are promoted here and collected less frequently
+#### 4. Incremental and concurrent collection
+To avoid performance issues (like freezing the application during collection):
+- **Incremental collection**: Divides the GC work into smaller chunks
+- **Concurrent collection**: Performs GC work on separate threads
+#### 5. Memory leaks from a GC perspective
+Memory leaks in garbage-collected languages occur when:
+- Objects remain reachable (have references) but are no longer needed
+- The developer inadvertently maintains references to objects that should be released
+
+### How to assist the garbage collector:
+```javascript
+// Help the garbage collector by nullifying references when done
+function processLargeData(data) {
+  // Process the data...
+  const result = heavyComputation(data);
+  
+  // Help GC by removing the reference to large data
+  data = null;
+  
+  return result;
+}
+
+// With closures, be mindful of what they capture
+function createProcessor(largeData) {
+  // Extract only what's needed
+  const summary = summarize(largeData);
+  
+  // Return a function that only closes over the summary
+  return function process() {
+    return doSomethingWith(summary);
+  };
+  
+  // largeData will be eligible for GC after this function completes
+}
+```
+
+### Browser tools for debugging memory issues:
+1. **Chrome DevTools Memory panel**: Take heap snapshots and compare them.
+2. **Performance panel**: Record memory allocation over time.
+3. **Allocation instrumentation**: Track where objects are being created.
+4. **Detached DOM elements**: Find DOM nodes that should be garbage collected but aren't.

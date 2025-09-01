@@ -4813,3 +4813,613 @@ console.log(2n ** 100n); // Huge number, exact
 
 console.log(Number(big)); // Approx for small, else BigInt.asIntN
 ```
+
+# Advanced Concepts & Web APIs
+
+## Question 101
+*Reference: [Question 101](js-questions.md#question-101)*
+
+### Q. What are Map and Set objects? How do they differ from regular Objects and Arrays, and when would you use them?
+
+Map and Set, introduced in ES6, are built-in collections for key-value pairs and unique values, respectively—offering ordered iteration and better performance for certain operations compared to Objects (as maps) and Arrays (as sets).
+
+### Map
+A **Map** is a collection of key-value pairs, similar to an Object, but with several important differences.
+```javascript
+// Creating a Map
+const userRoles = new Map();
+
+// Setting values
+userRoles.set('john', 'admin');
+userRoles.set('sarah', 'editor');
+userRoles.set(42, 'special-case');  // Keys can be any data type
+
+// Getting values
+console.log(userRoles.get('john'));  // 'admin'
+console.log(userRoles.has('sarah')); // true
+console.log(userRoles.size);         // 3
+
+// Iteration
+for (const [user, role] of userRoles) {
+  console.log(`${user}: ${role}`);
+}
+
+// Delete entries
+userRoles.delete('john');
+```
+**Differences from regular Objects:**
+1. **Key types:** Map keys can be any data type (including objects, functions, or primitives), while Object keys are always strings or symbols.
+2. **Order preservation:** Maps maintain insertion order when iterating.
+3. **Size property:** Maps have a built-in `.size` property, while Objects require `Object.keys(obj).length`.
+4. **Built-in iteration:** Maps are directly iterable without extra methods.
+5. **Performance:** Maps are optimized for frequent additions and removals of key-value pairs.
+
+### Set
+A **Set** is a collection of unique values, similar to an Array without duplicates.
+```javascript
+// Creating a Set
+const uniqueTags = new Set(['javascript', 'tutorial', 'web']);
+
+// Adding values
+uniqueTags.add('es6');
+uniqueTags.add('javascript'); // Duplicate not added
+
+// Checking values
+console.log(uniqueTags.has('es6'));     // true
+console.log(uniqueTags.size);           // 3
+
+// Iteration
+for (const tag of uniqueTags) {
+  console.log(tag);
+}
+
+// Delete values
+uniqueTags.delete('tutorial');
+```
+**Differences from Arrays:**
+1. **Uniqueness:** Sets only store unique values (no duplicates).
+2. **Value lookup:** Checking if a value exists in a Set is faster (O(1) vs O(n) for arrays).
+3. **No indexing:** Sets don't have index-based access like arrays.
+4. **No duplicate values:** Sets automatically prevent duplicates.
+
+### When to use them:
+**Use Map when:**
+- You need keys that aren't strings or symbols.
+- You need to maintain insertion order.
+- You frequently add/remove key-value pairs.
+- You need to quickly determine if a key exists.
+- You need a clean, purpose-built data structure for key-value associations.
+**Use Set when:**
+- You need to store unique values.
+- You frequently check for value existence.
+- You need to eliminate duplicates from a collection.
+- You need set operations (union, intersection, difference).
+
+## Question 102
+*Reference: [Question 102](js-questions.md#question-102)*
+
+### Q. What are WeakMap and WeakSet? What is their main use case (related to garbage collection)?
+
+WeakMap and WeakSet, introduced in ES6, are built-in collections for key-value pairs and unique values, respectively, but with a different approach to garbage collection.
+
+## WeakMap
+```javascript
+// Creating a WeakMap
+const privateData = new WeakMap();
+
+// Using objects as keys
+const user1 = { id: 1, name: 'John' };
+const user2 = { id: 2, name: 'Sarah' };
+
+// Setting values
+privateData.set(user1, { password: 'secret1' });
+privateData.set(user2, { password: 'secret2' });
+
+// Getting values
+console.log(privateData.get(user1)); // { password: 'secret1' }
+console.log(privateData.has(user2)); // true
+
+// If all other references to user1 are removed
+// user1 = null; (if this were possible)
+// The entry in privateData would be automatically removed
+```
+**Key characteristics of WeakMap:**
+1. **Keys must be objects:** Cannot use primitives as keys.
+2. **Weak references:** Keys are weakly referenced, allowing garbage collection.
+3. **Limited methods:** Only `.get()`, `.set()`, `.has()`, and `.delete()`
+4. **Not enumerable:** Cannot iterate over keys or values.
+5. **No size property:** Cannot determine the number of items.
+
+## WeakSet
+```javascript
+// Creating a WeakSet
+const visitedUsers = new WeakSet();
+
+// Adding objects
+const user1 = { id: 1, name: 'John' };
+const user2 = { id: 2, name: 'Sarah' };
+
+visitedUsers.add(user1);
+visitedUsers.add(user2);
+
+// Checking values
+console.log(visitedUsers.has(user1)); // true
+
+// If all other references to user1 are removed
+// user1 = null; (if this were possible)
+// The entry in visitedUsers would be automatically removed
+```
+**Key characteristics of WeakSet:**
+1. **Values must be objects:** Cannot store primitives
+2. **Weak references:** Values are weakly referenced, allowing garbage collection
+3. **Limited methods:** Only `.add()`, `.has()`, and `.delete()`
+4. **Not enumerable:** Cannot iterate over values
+5. **No size property:** Cannot determine the number of items
+
+### Main Use Cases (Related to Garbage Collection):
+1. **Private data storage:** WeakMaps are excellent for associating private data with objects without preventing those objects from being garbage collected.
+2. **Caching/memoization with memory efficiency:** Store computationally expensive results associated with objects, while allowing those results to be garbage collected when the objects are no longer needed.
+3. **DOM node metadata:** Store additional information about DOM nodes without causing memory leaks when those nodes are removed from the document.
+4. **Object tagging/flagging:** WeakSets are useful for marking objects as having been "processed" without modifying the objects themselves.
+5. **Event listener management:** Track objects that have event listeners attached, allowing automatic cleanup when objects are no longer referenced.
+
+```javascript
+// Example: Using WeakMap for caching expensive computations
+const cache = new WeakMap();
+
+function processData(data) {
+  if (cache.has(data)) {
+    console.log('Cache hit');
+    return cache.get(data);
+  }
+  
+  console.log('Computing result');
+  const result = expensiveComputation(data);
+  cache.set(data, result);
+  return result;
+}
+
+function expensiveComputation(data) {
+  // Simulate expensive work
+  return { processed: data.value * 2 };
+}
+
+// Usage
+let someData = { value: 42 };
+processData(someData); // Computes and caches
+processData(someData); // Uses cached result
+
+// If someData is later set to null and garbage collected,
+// the cached entry will also be removed automatically
+```
+
+The memory management benefits make WeakMap and WeakSet invaluable for preventing memory leaks in long-running applications or when dealing with objects that have variable lifetimes.
+
+## Solution 103
+*Reference: [Question 103](js-questions.md#question-103)*
+
+### Q. What are JavaScript Generators (function*) and the yield keyword? How are they useful?
+
+**Generators** are special functions in JavaScript (marked with function*) that can be paused and resumed, yielding multiple values over time rather than computing and returning all results at once.
+
+- **Syntax**: `function* gen() { yield 1; yield 2; }`—returns Generator object (iterator with .next()).
+- **yield**: Pauses, yields value; .next(arg) resumes, passes arg to yield expr.
+- **Mechanics**: Suspended state; done when returns. Supports try/finally for cleanup.
+
+```javascript
+function* simpleGenerator() {
+  console.log('Start');
+  yield 1;
+  console.log('After first yield');
+  yield 2;
+  console.log('After second yield');
+  yield 3;
+  console.log('End');
+}
+
+// Create a generator iterator
+const gen = simpleGenerator();
+
+console.log(gen.next()); // { value: 1, done: false }
+console.log(gen.next()); // { value: 2, done: false }
+console.log(gen.next()); // { value: 3, done: false }
+console.log(gen.next()); // { value: undefined, done: true }
+```
+The `yield` keyword is what makes generators special – it temporarily returns a value and pauses execution until the generator's `next()` method is called again.
+
+### Key Features of Generators:
+1. **Lazy evaluation:** Values are computed only when needed.
+2. **State preservation:** Local variables and execution context are preserved between yields.
+3. **Two-way communication:** Values can be passed into the generator via `next(value)`.
+4. **Error handling:** Errors can be thrown into generators using `throw()`.
+5. **Clean termination:** Generators can be terminated early with `return()`.
+
+### Practical Uses for Generators:
+- #### Generating Infinite Sequences
+  ```javascript
+  function* fibonacci() {
+    let [prev, curr] = [0, 1];
+    while (true) {
+      yield curr;
+      [prev, curr] = [curr, prev + curr];
+    }
+  }
+
+  const fib = fibonacci();
+  for (let i = 0; i < 10; i++) {
+    console.log(fib.next().value); // 1, 1, 2, 3, 5, 8, 13, 21, 34, 55
+  }
+  ```
+- ####  Iterating Over Custom Data Structures
+  ```javascript
+  class BinaryTree {
+    constructor(value, left = null, right = null) {
+      this.value = value;
+      this.left = left;
+      this.right = right;
+    }
+    
+    // In-order traversal generator
+    *[Symbol.iterator]() {
+      if (this.left) yield* this.left;
+      yield this.value;
+      if (this.right) yield* this.right;
+    }
+  }
+
+  const tree = new BinaryTree(4,
+    new BinaryTree(2, new BinaryTree(1), new BinaryTree(3)),
+    new BinaryTree(6, new BinaryTree(5), new BinaryTree(7))
+  );
+
+  // Iterate over the tree in-order
+  for (const value of tree) {
+    console.log(value); // 1, 2, 3, 4, 5, 6, 7
+  }
+  ```
+- #### Asynchronous Programming Flow Control
+  ```javascript
+  function* fetchUserData() {
+    try {
+      const userResponse = yield fetch('/api/user');
+      const userData = yield userResponse.json();
+      
+      const postsResponse = yield fetch(`/api/posts?userId=${userData.id}`);
+      const posts = yield postsResponse.json();
+      
+      return { user: userData, posts };
+    } catch (error) {
+      console.error('Error in data fetching:', error);
+      return null;
+    }
+  }
+
+  // Runner function to handle the generator
+  function runGenerator(generator) {
+    const iterator = generator();
+    
+    function handle(result) {
+      if (result.done) return Promise.resolve(result.value);
+      
+      return Promise.resolve(result.value)
+        .then(res => handle(iterator.next(res)))
+        .catch(err => handle(iterator.throw(err)));
+    }
+    
+    return handle(iterator.next());
+  }
+
+  // Use the generator
+  runGenerator(fetchUserData)
+    .then(data => console.log('Complete data:', data));
+
+  ```
+- #### Memory-Efficient Processing of Large Datasets
+  ```javascript
+  function* processLargeFile(filename) {
+    // Imagine this reads the file in chunks instead of all at once
+    const chunks = simulateFileChunks(filename);
+    
+    for (const chunk of chunks) {
+      const processedData = heavyProcessing(chunk);
+      yield processedData;
+    }
+  }
+
+  // Process each chunk without loading entire file into memory
+  for (const data of processLargeFile('large-dataset.csv')) {
+    saveToDatabase(data);
+  }
+  ```
+
+Generators provide an elegant solution for scenarios where traditional approaches might require complex state management or consume excessive memory. They're particularly valuable for working with large datasets, implementing custom iteration protocols, or managing complex asynchronous flows.
+
+## Solution 104
+*Reference: [Question 104](js-questions.md#question-104)*
+
+### Q. Explain the Iterator protocol in JavaScript.
+
+The Iterator protocol (ES6) defines how objects become iterable, providing sequential access via a standard interface—enabling for...of, spreads, and destructuring on custom objects.
+
+- Protocol: Object with .next() method returning {value: any, done: boolean}.
+- Iterable: Object with Symbol.iterator  returning iterator.
+- Consumption: for...of calls [Symbol.iterator], then .next() until done=true.
+
+```javascript
+const range = {
+  from: 1, to: 3,
+  [Symbol.iterator]() {
+    let current = this.from;
+    return {
+      next: () => current <= this.to ?
+        { value: current++, done: false } :
+        { done: true }
+    };
+  }
+};
+
+for (const num of range) console.log(num); // 1 2 3
+console.log([...range]); // [1,2,3]
+```
+
+### Practical Applications
+1. **Custom data structures**: Making your own data structures iterable.
+2. **Lazy evaluation**: Processing only what's needed when needed.
+3. **Working with streams of data**: Handling data that arrives over time.
+4. **Implementing the observable pattern**: Where observers receive values over time.
+
+The Iterator protocol provides a standardized way to traverse data structures, making your code more interoperable with JavaScript's built-in constructs and allowing for more expressive, functional programming patterns.
+
+## Solution 105
+*Reference: [Question 105](js-questions.md#question-105)*
+
+### Q. What is the difference between Local Storage and Session Storage? What are their limitations?
+
+Local Storage and Session Storage are both part of the Web Storage API, which provides mechanisms for web applications to store key-value pairs in a user's browser. While they share many similarities, they have distinct purposes and behaviors.
+
+### Local Storage
+**Local Storage** persists data without an expiration date. The data remains available even after the browser is closed and reopened.
+```javascript
+// Storing data
+localStorage.setItem('username', 'john_doe');
+localStorage.setItem('preferences', JSON.stringify({ theme: 'dark', fontSize: 'medium' }));
+
+// Retrieving data
+const username = localStorage.getItem('username');
+const preferences = JSON.parse(localStorage.getItem('preferences'));
+
+// Removing data
+localStorage.removeItem('username');
+
+// Clearing all data
+localStorage.clear();
+```
+### Session Storage
+**Session Storage** only maintains data for the duration of a page session. Data is cleared when the page session ends (when the tab/browser is closed).
+```javascript
+// Storing data
+sessionStorage.setItem('cartId', '12345');
+sessionStorage.setItem('cartItems', JSON.stringify([{ id: 1, name: 'Product', qty: 2 }]));
+
+// Retrieving data
+const cartId = sessionStorage.getItem('cartId');
+const cartItems = JSON.parse(sessionStorage.getItem('cartItems'));
+
+// Removing data
+sessionStorage.removeItem('cartId');
+
+// Clearing all data
+sessionStorage.clear();
+```
+
+#### Key Differences
+| Feature | Local Storage | Session Storage |
+| :--- | :--- | :--- |
+| **Lifetime** | Persists until explicitly deleted | Persists only for the session duration |
+| **Scope** | Available across browser tabs and windows | Limited to the tab/window where it was created |
+| **Storage Limit** | Typically 5-10MB (varies by browser) | Typically 5-10MB (varies by browser) |
+| **Data Sharing** | Shared between all tabs/windows from the same origin | Not shared between tabs/windows |
+| **Use Cases** | User preferences, theme settings, persistent authentication tokens | Form data, shopping cart, temporary session data |
+
+### Limitations of Web Storage
+1. **Storage Capacity**: Both are limited to around 5-10MB depending on the browser. This is insufficient for large datasets or media files.
+2. **Synchronous API**: Storage operations are synchronous and occur on the main thread, potentially causing performance issues with large datasets.
+3. **String-only Storage**: Values are always stored as strings, requiring conversion to/from JSON for complex data structures:
+
+```javascript
+// Need to stringify objects
+localStorage.setItem('user', JSON.stringify({ id: 1, name: 'John' }));
+   
+// Need to parse when retrieving
+const user = JSON.parse(localStorage.getItem('user'));
+```
+1. **No Indexing or Querying**: No built-in mechanisms for searching, filtering, or querying stored data.
+2. **Security Concerns**:
+  - Vulnerable to XSS attacks
+  - Unencrypted storage
+  - No way to secure sensitive data properly
+3. **Same-Origin Policy**: Can only be accessed by pages from the same origin (protocol, domain, port).
+4. **No Expiration Mechanism**: No built-in way to make data automatically expire (unlike cookies).
+5. **No Server Access**: Data is only available on the client side; servers cannot directly access it.
+6. **Private Browsing Limitations**: In private/incognito mode, storage may be limited or cleared when the session ends.
+7. **User Control**: Users can clear storage at any time, so critical data should have fallbacks.
+
+### When to Use Each
+**Use Local Storage for**:
+- User preferences (theme, language)
+- Cached data that improves performance
+- Offline application data
+- Authentication tokens (with proper security considerations)
+**Use Session Storage for**:
+- Form data that needs to persist across page navigations
+- Shopping cart contents during a browsing session
+- Wizard/multi-step process state
+- One-time usage tokens
+- Temporary user tracking within a single session
+For scenarios that exceed these limitations, consider alternatives like IndexedDB (for larger client-side storage needs) or server-side storage solutions.
+
+## Solution 106
+*Reference: [Question 106](js-questions.md#question-106)*
+
+### Q. What are Web Workers? How do they help with application performance?
+
+**Web Workers** are a JavaScript feature that allow scripts to run in background threads, separate from the main execution thread of a web application. They enable true parallel execution of code without blocking the user interface.
+
+### How Web Workers Work
+```javascript
+// Main script (main.js)
+const worker = new Worker('worker.js');
+
+// Send data to the worker
+worker.postMessage({ data: [1, 2, 3, 4, 5], operation: 'sum' });
+
+// Listen for messages from the worker
+worker.onmessage = function(event) {
+  console.log('Result from worker:', event.data);
+};
+
+// Handle errors
+worker.onerror = function(error) {
+  console.error('Worker error:', error.message);
+};
+
+// Terminate worker when done
+function stopWorker() {
+  worker.terminate();
+}
+```
+```javascript
+// Worker script (worker.js)
+self.onmessage = function(event) {
+  const { data, operation } = event.data;
+  
+  let result;
+  if (operation === 'sum') {
+    result = data.reduce((acc, val) => acc + val, 0);
+  } else if (operation === 'average') {
+    result = data.reduce((acc, val) => acc + val, 0) / data.length;
+  }
+  
+  // Send result back to main thread
+  self.postMessage(result);
+};
+```
+### Types of Web Workers
+1. **Dedicated Workers**: Used by a single script instance (as shown above).
+2. **Shared Workers**: Can be shared between multiple scripts or windows from the same origin.
+3. **Service Workers**: Act as proxy servers that sit between web applications, the browser, and the network, enabling features like offline support and push notifications.
+
+### How Web Workers Help with Application Performance
+4. **Parallel Processing**: Workers enable true parallel code execution, utilizing multiple CPU cores.
+5. **Main Thread Offloading**: By moving intensive operations to background threads, the main thread remains responsive for user interactions.
+6. **Preventing UI Freezing**: Computationally expensive tasks won't cause the interface to freeze or become unresponsive.
+7. **Better Resource Utilization**: Distributing work across multiple threads utilizes modern multi-core processors more efficiently.
+8. **Improved User Experience**: Applications remain smooth and responsive even during complex operations.
+
+### Limitations of Web Workers
+1. **No DOM Access**: Workers cannot directly access the DOM, window object, or parent objects.
+2. **Limited Shared State**: Data is copied between the main thread and workers (not shared by reference), which can be inefficient for large datasets.
+3. **Overhead**: There's a cost to creating workers and passing messages, so they're most beneficial for non-trivial tasks.
+4. **Additional Files**: Workers typically require separate JavaScript files, adding to project complexity.
+5. **Browser Support**: While generally well-supported in modern browsers, some features (particularly of Shared Workers) have varying levels of support.
+
+## Solution 107
+*Reference: [Question 107](js-questions.md#question-107)*
+
+### Q. What is the Shadow DOM?
+
+The **Shadow DOM** is a web standard that provides encapsulation for DOM trees, CSS, and JavaScript. It allows hidden DOM trees to be attached to elements in the regular DOM tree, keeping them separate from the main document DOM and preventing style and structural conflicts.
+
+### Core Concepts
+1. **Shadow Host**: The regular DOM element that the Shadow DOM is attached to.
+2. **Shadow Root**: The root node of the Shadow DOM tree.
+3. **Shadow Boundary**: The separation between the Shadow DOM and the regular DOM.
+4. **Shadow Tree**: The DOM tree inside the Shadow DOM.
+5. **Slots**: Placeholders in the Shadow DOM that are filled with content from the light DOM (the regular DOM).
+### Creating and Using Shadow DOM
+```javascript
+// Create a custom element
+class CustomCard extends HTMLElement {
+  constructor() {
+    super();
+    
+    // Create a shadow root
+    const shadow = this.attachShadow({ mode: 'open' });
+    
+    // Create elements
+    const wrapper = document.createElement('div');
+    wrapper.setAttribute('class', 'card');
+    
+    const title = document.createElement('h2');
+    title.setAttribute('class', 'card-title');
+    
+    // Create slots
+    const titleSlot = document.createElement('slot');
+    titleSlot.setAttribute('name', 'title');
+    title.appendChild(titleSlot);
+    
+    const contentSlot = document.createElement('slot');
+    wrapper.appendChild(title);
+    wrapper.appendChild(contentSlot);
+    
+    // Create styles
+    const style = document.createElement('style');
+    style.textContent = `
+      .card {
+        padding: 16px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        font-family: Arial, sans-serif;
+      }
+      .card-title {
+        color: #2c3e50;
+        border-bottom: 1px solid #eee;
+      }
+    `;
+    
+    // Attach elements to the shadow DOM
+    shadow.appendChild(style);
+    shadow.appendChild(wrapper);
+  }
+}
+
+// Register the custom element
+customElements.define('custom-card', CustomCard);
+```
+```html
+<!-- Using the custom element -->
+<custom-card>
+  <span slot="title">My Custom Card</span>
+  <p>This is the content of my card.</p>
+</custom-card>
+```
+
+### Key Benefits of Shadow DOM
+- **CSS Encapsulation**: Styles defined within a Shadow DOM are scoped to that Shadow DOM and don't affect the rest of the page.
+  ```javascript
+  // Styles defined here only apply to elements in this Shadow DOM
+  shadowRoot.innerHTML = `
+    <style>
+      p { color: red; } /* Only affects <p> tags in this Shadow DOM */
+    </style>
+    <p>This text will be red</p>
+  `;
+  ```
+- **DOM Encapsulation**: Elements within a Shadow DOM are not accessible via normal DOM queries from the outside.
+  ```javascript
+  // Won't find elements inside Shadow DOM
+  document.querySelector('custom-card p'); // null
+    
+  // Correct way to access
+  const card = document.querySelector('custom-card');
+  const paragraph = card.shadowRoot.querySelector('p');
+  ```
+- **Composition**: Shadow DOM makes it easier to compose components with clear boundaries.
+  ```html
+  <fancy-tabs>
+    <fancy-tab slot="tab">Tab 1</fancy-tab>
+    <fancy-tab slot="tab">Tab 2</fancy-tab>
+    <fancy-panel slot="panel">Panel 1</fancy-panel>
+    <fancy-panel slot="panel">Panel 2</fancy-panel>
+  </fancy-tabs>
+  ```

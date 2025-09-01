@@ -323,3 +323,26 @@ Explain nullish coalescing operator (??).
 
 ## Question 100
 What is BigInt, and why was it added to JavaScript?
+
+# Advanced Topics & Browser APIs
+
+## Question 101
+What are Map and Set objects? How do they differ from regular Objects and Arrays, and when would you use them?
+
+## Question 102
+What are WeakMap and WeakSet? What is their main use case (related to garbage collection)?
+
+## Question 103
+What are JavaScript Generators (function*) and the yield keyword? How are they useful?
+
+## Question 104
+Explain the Iterator protocol in JavaScript.
+
+## Question 105
+What is the difference between Local Storage and Session Storage? What are their limitations?
+
+## Question 106
+What are Web Workers? How do they help with application performance?
+
+## Question 107
+What is the Shadow DOM?

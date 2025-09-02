@@ -363,3 +363,38 @@ What are some common causes of memory leaks in JavaScript, and how can you preve
 
 ## Question 112
 Explain how garbage collection works in JavaScript at a high level.
+
+# Design Patterns & Code Quality
+## Question 113
+What is composition over inheritance?
+
+## Question 114
+Explain the Observer pattern. How does it relate to event listeners?
+
+## Question 115
+What are the core principles of functional programming? (e.g., immutability, pure functions, avoiding side effects).
+
+## Question 116
+What is the difference between the Module Pattern and the Revealing Module Pattern?
+
+# Security
+
+## Question 117
+What is Cross-Site Scripting (XSS)? How can you prevent it?
+
+## Question 118
+What is Cross-Site Request Forgery (CSRF)?
+
+## Question 119
+What is a Content Security Policy (CSP)?
+
+# Tooling & Ecosystem
+
+## Question 120
+What is a module bundler (like Webpack or Vite), and why is it needed?
+
+## Question 121
+What is code transpilation? (e.g., using Babel).
+
+## Question 122
+What is the purpose of a linter like ESLint?

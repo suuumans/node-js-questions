@@ -5688,3 +5688,611 @@ function createProcessor(largeData) {
 2. **Performance panel**: Record memory allocation over time.
 3. **Allocation instrumentation**: Track where objects are being created.
 4. **Detached DOM elements**: Find DOM nodes that should be garbage collected but aren't.
+
+
+# Design Patterns & Code Quality
+
+## Solution 113
+*Reference: [Question 113](js-questions.md#question-113)*
+
+### Q. What is compostition over inheritance in JavaScript?
+
+Compostition over inheritance is a design pattern in JavaScript where a class inherits from another class, but overrides some of the methods or properties of the parent class.
+
+**Key concepts:**
+1. **Inheritance** creates an "is-a" relationship between objects through class hierarchies.
+2. **Composition** creates a "has-a" relationship by combining simpler objects or functions to build more complex ones.
+
+**Why composition is often preferred:**
+
+- **Flexibility**: Composition allows you to change behavior at runtime by swapping components.
+- **Avoids the "fragile base class problem"**: Changes to parent classes can unexpectedly break child classes.
+- **Prevents deep inheritance hierarchies**: Deep hierarchies can become difficult to understand and maintain.
+- **Encourages code reuse**: Smaller, focused components can be reused across different contexts.
+
+**Example of inheritance vs. composition:**
+
+```javascript
+// Inheritance approach
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+  
+  eat() {
+    console.log(`${this.name} is eating.`);
+  }
+}
+
+class Bird extends Animal {
+  fly() {
+    console.log(`${this.name} is flying.`);
+  }
+}
+
+class Fish extends Animal {
+  swim() {
+    console.log(`${this.name} is swimming.`);
+  }
+}
+
+// Problem: What if we need a flying fish? Multiple inheritance isn't supported in JavaScript
+```
+```javascript
+// Composition approach
+const nameProperty = (name) => ({
+  name,
+  setName(newName) { this.name = newName; }
+});
+
+const eater = (state) => ({
+  eat() {
+    console.log(`${state.name} is eating.`);
+  }
+});
+
+const flyer = (state) => ({
+  fly() {
+    console.log(`${state.name} is flying.`);
+  }
+});
+
+const swimmer = (state) => ({
+  swim() {
+    console.log(`${state.name} is swimming.`);
+  }
+});
+
+// Create objects with exactly the behaviors they need
+const createBird = (name) => {
+  const state = { name };
+  return {
+    ...nameProperty(name),
+    ...eater(state),
+    ...flyer(state)
+  };
+};
+
+const createFish = (name) => {
+  const state = { name };
+  return {
+    ...nameProperty(name),
+    ...eater(state),
+    ...swimmer(state)
+  };
+};
+
+// Now we can easily create a flying fish!
+const createFlyingFish = (name) => {
+  const state = { name };
+  return {
+    ...nameProperty(name),
+    ...eater(state),
+    ...swimmer(state),
+    ...flyer(state)
+  };
+};
+
+const bird = createBird("Sparrow");
+bird.fly(); // "Sparrow is flying."
+
+const flyingFish = createFlyingFish("Flying Fish");
+flyingFish.swim(); // "Flying Fish is swimming."
+flyingFish.fly(); // "Flying Fish is flying."
+```
+
+## Solution 114
+*Reference: [Question 114](js-questions.md#question-114)*
+
+### Q. Explain the Observer pattern. How does it relate to event listeners?
+
+The Observer pattern is a behavioral design pattern where an object (the subject) maintains a list of dependents (observers) and notifies them automatically of state changes. This pattern establishes a one-to-many relationship between objects, promoting loose coupling and allowing for effective event handling.
+
+**Key concepts:**
+1. **Subject**: Maintains a list of observers and provides methods to add, remove, and notify observers.
+2. **Observer**: Defines an interface for objects that should be notified of changes.
+3. **ConcreteSubject**: Implements the Subject interface and notifies observers when its state changes.
+4. **ConcreteObserver**: Implements the Observer interface to respond to notifications.
+
+**Basic implementation:**
+```javascript
+class Subject {
+  constructor() {
+    this.observers = [];
+  }
+  
+  addObserver(observer) {
+    this.observers.push(observer);
+  }
+  
+  removeObserver(observer) {
+    this.observers = this.observers.filter(obs => obs !== observer);
+  }
+  
+  notify(data) {
+    this.observers.forEach(observer => observer.update(data));
+  }
+}
+
+class Observer {
+  update(data) {
+    // Abstract method to be implemented by concrete observers
+  }
+}
+
+// Example implementation
+class NewsPublisher extends Subject {
+  publishNews(news) {
+    console.log(`Publishing news: ${news}`);
+    this.notify(news);
+  }
+}
+
+class NewsSubscriber extends Observer {
+  constructor(name) {
+    super();
+    this.name = name;
+  }
+  
+  update(news) {
+    console.log(`${this.name} received news: ${news}`);
+  }
+}
+
+// Usage
+const publisher = new NewsPublisher();
+const subscriber1 = new NewsSubscriber("Alice");
+const subscriber2 = new NewsSubscriber("Bob");
+
+publisher.addObserver(subscriber1);
+publisher.addObserver(subscriber2);
+
+publisher.publishNews("JavaScript 2025 released!");
+// "Publishing news: JavaScript 2025 released!"
+// "Alice received news: JavaScript 2025 released!"
+// "Bob received news: JavaScript 2025 released!"
+```
+**Relation to event listeners:**
+The Observer pattern is the foundation for event handling in JavaScript. The DOM event system is a real-world implementation of this pattern:
+1. **DOM elements (subjects)** maintain lists of event listeners (observers).
+2. **Event listeners (observers)** are functions that respond to specific events.
+3. **addEventListener** adds an observer to the subject.
+4. **removeEventListener** removes an observer from the subject.
+5. **Event dispatch** is the notification mechanism.
+
+```javascript
+// DOM implementation of Observer pattern
+const button = document.querySelector('#myButton');
+
+// Adding observers (event listeners)
+const handleClick1 = () => console.log('Handler 1 executed');
+const handleClick2 = () => console.log('Handler 2 executed');
+
+button.addEventListener('click', handleClick1); // Add observer 1
+button.addEventListener('click', handleClick2); // Add observer 2
+
+// When button is clicked, both handlers are notified
+// To remove an observer:
+button.removeEventListener('click', handleClick1);
+```
+**Modern implementations:**
+
+In modern JavaScript, we see the Observer pattern in:
+1. **EventEmitter in Node.js**
+2. **Reactive programming libraries** like RxJS
+3. **State management solutions** like Redux (where components subscribe to store changes)
+4. **Custom event systems** in frameworks like Vue.js and Angular.
+
+The pattern's popularity stems from its effectiveness in managing communication between components in a loosely coupled way, making systems more maintainable and extensible.
+
+## Solution 115
+*Reference: [Question 115](js-questions.md#question-115)*
+
+### Q. What are the core principles of functional programming? (e.g., immutability, pure functions, avoiding side effects).
+
+Functional programming (FP) is a programming paradigm that treats computation as the evaluation of mathematical functions and avoids changing state and mutable data. JavaScript, being a multi-paradigm language, allows developers to adopt functional programming principles alongside other approaches.
+
+**Core principles of functional programming:**
+### 1. Pure Functions
+Pure functions always produce the same output for the same input and have no side effects.
+  ```javascript
+  // Pure function
+  function add(a, b) {
+    return a + b;
+  }
+
+  // Impure function (has side effects)
+  let total = 0;
+  function addToTotal(value) {
+    total += value; // Side effect: modifies external state
+    return total;
+  }
+  ```
+
+### 2. Immutability
+Data should never be modified after creation. Instead, create new data structures with the desired changes.
+  ```javascript
+  // Mutable approach
+  const addItem = (cart, item) => {
+    cart.push(item); // Modifies original array
+    return cart;
+  };
+
+  // Immutable approach
+  const addItemImmutably = (cart, item) => {
+    return [...cart, item]; // Returns new array
+  };
+
+  const cart = [{ id: 1, name: "Book" }];
+  const newCart = addItemImmutably(cart, { id: 2, name: "Pen" });
+  console.log(cart); // Original remains unchanged: [{ id: 1, name: "Book" }]
+  console.log(newCart); // New array: [{ id: 1, name: "Book" }, { id: 2, name: "Pen" }]
+  ```
+
+### 3. Function Composition
+Building complex functions by combining simpler functions, where the output of one function becomes the input of the next.
+  ```javascript
+  // Simple functions
+  const double = x => x * 2;
+  const increment = x => x + 1;
+
+  // Manual composition
+  const doubleAndIncrement = x => increment(double(x));
+
+  // Using a compose utility
+  const compose = (...fns) => x => fns.reduceRight((acc, fn) => fn(acc), x);
+  const incrementAndDouble = compose(double, increment);
+
+  console.log(doubleAndIncrement(3)); // 7
+  console.log(incrementAndDouble(3)); // 8 (increment first, then double)
+  ```
+
+### 4. Higher-Order Functions
+Functions that take other functions as arguments or return functions as results.
+  ```javascript
+  // map, filter, and reduce are higher-order functions
+  const numbers = [1, 2, 3, 4, 5];
+
+  const doubled = numbers.map(n => n * 2);
+  const evens = numbers.filter(n => n % 2 === 0);
+  const sum = numbers.reduce((total, n) => total + n, 0);
+
+  console.log(doubled); // [2, 4, 6, 8, 10]
+  console.log(evens);   // [2, 4]
+  console.log(sum);     // 15
+  ```
+
+### 5. Recursion
+Using function calls to itself to solve problems rather than iterative approaches with loops.
+  ```javascript
+  // Recursive factorial function
+  function factorial(n) {
+    if (n <= 1) return 1;
+    return n * factorial(n - 1);
+  }
+
+  console.log(factorial(5)); // 120
+  ```
+
+### 6. First-Class and Higher-Order Functions
+Functions are treated as first-class citizens, meaning they can be assigned to variables, passed as arguments, and returned from other functions.
+  ```javascript
+  // Assigning to variables
+  const greet = name => `Hello, ${name}!`;
+
+  // Passing as arguments
+  const executeOperation = (operation, a, b) => operation(a, b);
+  console.log(executeOperation((a, b) => a + b, 5, 3)); // 8
+
+  // Returning functions
+  const createMultiplier = factor => number => number * factor;
+  const double = createMultiplier(2);
+  console.log(double(10)); // 20
+  ```
+
+### 7. Avoiding Side Effects
+Preventing functions from modifying external state, performing I/O operations, or having other effects beyond returning a value.
+  ```javascript
+  // Function with side effects
+  function logAndAdd(a, b) {
+    console.log(`Adding ${a} and ${b}`); // Side effect: I/O operation
+    return a + b;
+  }
+
+  // Pure alternative
+  function add(a, b) {
+    return a + b;
+  }
+  // Logging can be handled separately
+  console.log(`Adding 2 and 3: ${add(2, 3)}`);
+  ```
+**Benefits of functional programming:**
+1. **Predictability**: Pure functions always behave the same way.
+2. **Testability**: Pure functions are easier to test since they have no dependencies.
+3. **Concurrency**: Immutable data and pure functions make concurrent programming safer.
+4. **Debugging**: The functional approach makes it easier to trace program execution.
+5. **Reusability**: Small, focused functions can be reused across different contexts.
+
+JavaScript's functional programming capabilities have been enhanced in recent versions with the addition of features like arrow functions, spread/rest operators, and array methods that encourage functional patterns.
+
+## Solution 116
+*Reference: [Question 116](js-questions.md#question-116)*
+
+### Q. What is the difference between the Module Pattern and the Revealing Module Pattern?
+
+Both are creational patterns using closures for private scopes in pre-ES6 JS, but differ in exposure: Module Pattern returns an object with methods accessing privates; Revealing Module Pattern "reveals" private functions directly in the return object for cleaner syntax.
+
+- **Module Pattern**: Encapsulates privates; public methods as closures referencing them.
+- **Revealing Module Pattern**: Defines all in private scope, returns object mapping to those functions—reveals intent, easier refactoring (change private names without public impact).
+
+Example (Module):
+```javascript
+const Module = (function() {
+  let privateVar = 'secret';
+  function privateMethod() { return privateVar; }
+  return {
+    publicMethod() { return privateMethod(); } // Closure
+  };
+})();
+console.log(Module.publicMethod()); // 'secret'
+```
+Revealing:
+```javascript
+const RevealingModule = (function() {
+  let privateVar = 'secret';
+  function privateMethod() { return privateVar; }
+  return {
+    publicMethod: privateMethod // Direct ref
+  };
+})();
+console.log(RevealingModule.publicMethod()); // 'secret'
+```
+
+## Solution 117
+*Reference: [Question 117](js-questions.md#question-117)*
+
+### Q. What is Cross-Site Scripting (XSS)? How can you prevent it?
+
+Cross-Site Scripting (XSS) is a critical security vulnerability where attackers inject malicious client-side scripts into web pages viewed by other users. When these scripts execute in victims' browsers, they can steal sensitive information (cookies, session tokens), impersonate users, or deface websites.
+
+**Types of XSS:**
+- **Reflected XSS:** The malicious script is embedded in a URL and activates when someone clicks a malicious link.
+- **Stored XSS:** The malicious script is permanently stored on the target server (in a database, comment field, etc.) and executes when users view the affected page.
+- **DOM-based XSS:** The vulnerability exists in client-side code rather than server responses.
+
+**Prevention techniques:**
+
+- **Output Encoding/Escaping:** Always encode user-generated content before rendering it.
+  ```javascript
+  // UNSAFE - vulnerable to XSS
+  element.innerHTML = userInput;
+    
+  // SAFE - displays tags as text, not executable HTML
+  element.textContent = userInput;
+  ```
+
+- **Input Validation:** Implement strict input validation on both client and server sides.
+- **Content Security Policy (CSP):** Implement CSP headers to restrict script sources.
+  ```javascript
+  // Server header example
+  Content-Security-Policy: script-src 'self' https://trusted-cdn.com
+  ```
+- **Use Modern Frameworks:** Frameworks like React, Vue, and Angular automatically escape content by default.
+- **Sanitize HTML:** When you need to allow some HTML, use libraries like DOMPurify.
+  ```javascript
+  // When you need to allow some HTML but prevent scripts
+  import DOMPurify from 'dompurify';
+  element.innerHTML = DOMPurify.sanitize(userInput);
+  ```
+- **Use HttpOnly Cookies:** Prevent JavaScript from accessing sensitive cookies.
+- **X-XSS-Protection Header:** Enable built-in browser XSS filtering.
+  ```
+  X-XSS-Protection: 1; mode=block
+  ```
+The difference between safe and unsafe approaches is clearly demonstrated in the code I see from 3 days ago (Saturday, August 30, 2025). It shows that using `textContent` instead of `innerHTML` prevents XSS by treating malicious script tags as literal text rather than executable code.
+
+## Solution 118
+*Reference: [Question 118](js-questions.md#question-118)*
+
+### Q. What is Cross-Site Request Forgey (CSRF)?
+
+Cross-Site Request Forgery (CSRF) is an attack that forces authenticated users to execute unwanted actions on a web application where they're currently authenticated. The attack works by tricking users into clicking a link or loading a page that submits a forged request to a server where the user has an active session.
+
+**How CSRF works:**
+1. User logs into a legitimate site (e.g., a banking website) and receives a session cookie.
+2. Without logging out, the user visits a malicious site.
+3. The malicious site contains code that submits a request to the legitimate site.
+4. Because the browser automatically includes cookies with requests, the legitimate site processes the request as if it came from the authenticated user.
+
+**Example of a CSRF attack:**
+```html
+<!-- Malicious site contains this hidden form -->
+<form action="https://bank.com/transfer" method="POST" id="csrf-form">
+  <input type="hidden" name="recipient" value="attacker">
+  <input type="hidden" name="amount" value="1000">
+</form>
+<script>
+  document.getElementById('csrf-form').submit();
+</script>
+```
+**Prevention techniques:**
+- **CSRF Tokens:** Include unique, unpredictable tokens in forms that the server validates.
+  ```html
+  <form action="/transfer" method="post">
+    <input type="hidden" name="csrf_token" value="random-token-tied-to-user-session">
+    <!-- other form fields -->
+  </form>
+  ```
+  - **SameSite Cookie Attribute:** Restrict cookies to same-site requests.
+  ```
+  Set-Cookie: sessionid=abc123; SameSite=Strict;
+  ```
+- **Custom Request Headers:** For AJAX requests, add custom headers that simple forms can't add.
+  ```javascript
+  fetch('/api/data', {
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  });
+  ```
+- **Verify Origin/Referer Headers:** Check that requests come from your own domain.
+- **Double Submit Cookie Pattern:** Send the token both as a cookie and in the request body, then compare them.
+
+Modern browsers have improved CSRF protection with default SameSite=Lax cookie settings, but implementing multiple layers of protection is still recommended for sensitive operations.
+
+## Solution 119
+*Reference: [Question 119](js-questions.md#question-119)*
+
+### Q. What is a Content Security Policy (CSP)?
+
+Content Security Policy (CSP) is a security standard that helps prevent XSS, clickjacking, and other code injection attacks. It works by declaring approved sources of content that browsers should be allowed to load on a webpage.
+
+**How CSP works:**
+CSP is implemented through HTTP response headers or meta tags that specify which resources (scripts, styles, images, etc.) can be loaded and executed by the browser.
+
+**Key CSP directives:**
+1. **default-src:** Fallback for other resource types if they're not specified.
+2. **script-src:** Controls valid sources for JavaScript.
+3. **style-src:** Controls valid sources for stylesheets.
+4. **img-src:** Controls valid sources for images.
+5. **connect-src:** Controls valid targets for fetch, XHR, WebSocket, etc.
+6. **font-src:** Controls valid sources for fonts.
+7. **frame-src:** Controls valid sources for frames.
+8. **report-uri:** Where to send reports of CSP violations.
+
+**Example of a CSP header:**
+```
+Content-Security-Policy: default-src 'self'; 
+                         script-src 'self' https://trusted-cdn.com; 
+                         style-src 'self' https://trusted-styles.com; 
+                         img-src 'self' data: https://images.com; 
+                         connect-src 'self' https://api.myservice.com;
+                         report-uri /csp-violation-report;
+```
+
+# Tooling & Ecosystem
+
+## Solution 120
+*Reference: [Question 120](js-questions.md#question-120)*
+
+### Q. What is a module bundler (like webpack or vite), and why is it needed?
+
+A module bundler is a tool that processes JavaScript applications by resolving dependencies and merging (bundling) all the necessary code files into one or more optimized bundles for production deployment.
+
+**Why module bundlers are needed:**
+1. **Dependency Management**: Modern web applications often consist of dozens or hundreds of JavaScript files with complex dependency relationships. Bundlers automatically resolve and include all dependencies in the correct order.
+2. **Code Optimization**: Bundlers minify and optimize code for production, reducing file sizes through techniques like dead code elimination, tree shaking (removing unused exports), and code splitting (breaking bundles into smaller chunks loaded on demand).
+3. **Module System Support**: Historically, browsers didn't support ES modules natively. Bundlers enable developers to use module systems (CommonJS, ES Modules) regardless of browser support.
+4. **Asset Transformation**: Bundlers can process non-JavaScript assets like CSS, images, and fonts, allowing them to be imported directly in JavaScript and optimized during the build process.
+5. **Development Experience**: Tools like Webpack Dev Server and Vite provide features like hot module replacement (updating modules without full page reloads) for rapid development.
+
+**Differences between popular bundlers:**
+- **Webpack**: The most established bundler with a rich ecosystem of plugins and loaders. It's highly configurable but can be complex to set up.
+- **Vite**: A newer, faster bundler that leverages native ES modules during development and only bundles for production. It provides near-instantaneous startup and hot module replacement.
+- **Rollup**: Specializes in creating efficient bundles for libraries, with excellent tree-shaking capabilities.
+- **Parcel**: Emphasizes zero-configuration bundling with automatic detection of dependencies and transformations.
+
+**Example (Webpack config snippet)**:
+```javascript
+module.exports = {
+  entry: './src/index.js',
+  output: { filename: 'bundle.js' },
+  module: { rules: [{ test: /\.js$/, use: 'babel-loader' }] }
+};
+```
+
+## Solution 121
+*Reference: [Question 121](js-questions.md#question-121)*
+
+### Q. What is code transpilation? (e.g., using Babel).
+
+Transpilation is the process of converting source code written in one language or version into equivalent code in another language or version. In JavaScript development, transpilation typically refers to converting modern JavaScript (ES6+) to older versions (ES5) for broader browser compatibility.
+
+**Key aspects of transpilation:**
+1. **Cross-browser Compatibility**: Allows developers to write modern JavaScript while ensuring the code runs in older browsers that don't support newer language features.
+2. **Future-proofing**: Developers can use proposed JavaScript features (via Babel plugins) before they're officially part of the language specification.
+3. **Type Checking**: Tools like TypeScript transpile typed JavaScript into standard JavaScript while providing type checking during development.
+
+**How Babel works:**
+```javascript
+// Modern JavaScript (input)
+const multiply = (a, b) => a * b;
+
+// Transpiled to ES5 (output)
+var multiply = function(a, b) {
+  return a * b;
+};
+```
+Babel's transpilation process involves:
+1. **Parsing**: Converting source code into an Abstract Syntax Tree (AST).
+2. **Transformation**: Modifying the AST using plugins/presets to target specific syntax transformations.
+3. **Generation**: Converting the transformed AST back into JavaScript code.
+
+**Common transpilation scenarios:**
+- **ES6+ to ES5**: Converting newer JavaScript features to older syntax.
+- **JSX to JavaScript**: Converting React's JSX syntax to standard JavaScript.
+- **TypeScript to JavaScript**: Converting TypeScript's typed syntax to plain JavaScript.
+- **Experimental features**: Using proposed JavaScript features before they're finalized.
+
+## Solution 122
+*Reference: [Question 122](js-questions.md#question-122)*
+
+### Q. What is the purpose os a linter like ESLint?
+
+A linter is a static analysis tool that examines source code to flag programming errors, bugs, stylistic issues, and suspicious constructs. ESLint is the most popular JavaScript linter.
+
+**Primary purposes of linters:**
+1. **Code Quality**: Identify potential bugs, unused variables, unreachable code, and other programming errors before execution.
+2. **Code Consistency**: Enforce coding style guidelines across a codebase to maintain readability and consistency among team members.
+3. **Best Practices**: Promote recommended patterns and discourage anti-patterns or potentially problematic code.
+4. **Customization**: Allow teams to define and enforce project-specific rules through configuration.
+5. **Integration**: Work within development workflows through editor plugins, pre-commit hooks, and CI/CD pipelines.
+
+**ESLint features and capabilities:**
+```javascript
+// Example code with ESLint issues
+function calculateTotal(items) {
+  var total = 0;  // 'var' might be disallowed by stylistic rules
+  for(var i = 0; i < items.length; i++) {
+    total += items[i].price  // Missing semicolon
+  }
+  
+  console.log("Debug output");  // Forgotten console statement
+  
+  return total  // Missing semicolon
+}
+```
+SLint would typically flag issues such as:
+- Missing semicolons (if required by style guide).
+- Use of `var` instead of `let`/`const`.
+- Debugging statements left in production code.
+- Inconsistent spacing or indentation.
+
+**ESLint configuration and ecosystem:**
+- **Rules**: Hundreds of built-in rules can be enabled/disabled with different error levels (error, warning, off).
+- **Presets**: Common rule configurations like Airbnb, Standard, or Google style guides.
+- **Plugins**: Extend functionality for frameworks (React, Vue), environments (Node.js), or tools (TypeScript).
+- **Automatic fixing**: Many rules support auto-fixing via `--fix` option
+- **Integration**: Works with editors (VS Code, WebStorm) and build tools (Webpack, Vite).
+
+ESLint has become an essential tool in modern JavaScript development, significantly improving code quality and team productivity by catching issues early in the development process.

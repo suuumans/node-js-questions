@@ -545,3 +545,573 @@ The process object is essential for:
 - Monitoring application performance
 - Handling command-line interfaces
 - Managing application lifecycle
+
+
+## Question 11
+*Reference: [Question 11](node-questions.md#question-11)*
+
+### Q. What are modules in Node.js, and how do you create one?
+
+Modules in Node.js are reusable blocks of code that encapsulate related functionality, making applications more maintainable and organized. They help prevent global namespace pollution and promote code reusability.
+
+**How to create a module in Node.js:**
+```javascript
+// math.js - A simple module
+function add(a, b) {
+  return a + b;
+}
+
+function subtract(a, b) {
+  return a - b;
+}
+
+// Export specific functions
+module.exports = {
+  add: add,
+  subtract: subtract
+};
+
+// Alternative shorthand syntax
+// module.exports = { add, subtract };
+```
+**Using the module:**
+```javascript
+// app.js - Using the module
+const math = require('./math');
+
+console.log(math.add(5, 3));      // 8
+console.log(math.subtract(10, 4)); // 6
+```
+You can also export a single function or object:
+```javascript
+// logger.js - Single export module
+function log(message) {
+  console.log(`[${new Date().toISOString()}] ${message}`);
+}
+
+module.exports = log;
+```
+**Using the single export module:**
+```javascript
+// app.js
+const logger = require('./logger');
+
+logger('Application started'); // [2025-09-04T20:21:06.992Z] Application started
+```
+
+## Question 12
+*Reference: [Question 12](node-questions.md#question-12)*
+
+### Q. What is the difference between `require()` and `import` in Node.js?
+
+The require() and import statements serve the same purpose of loading modules but belong to different module systems with important differences:
+
+**require() (CommonJS):**
+```javascript
+// Importing with require (CommonJS)
+const fs = require('fs');
+const { readFile } = require('fs');
+const myModule = require('./my-module');
+```
+**import (ES Modules):**
+```javascript
+// Importing with import (ES Modules)
+import fs from 'fs';
+import { readFile } from 'fs';
+import myModule from './my-module.js';
+```
+**Key differences:**
+1. **Syntax**: `require()` is a function call, while `import` is a declarative statement.
+2. **Loading behavior**:
+  - `require()` is synchronous and loads modules at runtime
+  - `import` is asynchronous and processes imports during parsing (before execution).
+3. **File extension requirements**:
+  - `require()` doesn't need file extensions for JS files.
+  - `import` typically requires file extensions (`.js`, `.mjs`).
+4. **Dynamic loading**:
+  - `require()` can be called anywhere in code (conditionally).
+  - Traditional `import` must be at the top level (ES2020 added dynamic `import()`).
+5. **Support in Node.js**:
+  - `require()` is natively supported in all Node.js versions.
+  - `import` requires either `.mjs` extension, `"type": "module"` in package.json, or newer Node.js versions.
+
+
+## Question 13
+*Reference: [Question 13](node-questions.md#question-13)*
+
+### Q. What is CommonJS vs ES Modules in Node.js?
+
+**CommonJS** and **ES Modules** are two different module systems in Node.js with different syntax, loading behavior, and features.
+**CommonJS:**
+```javascript
+// Exporting in CommonJS
+const PI = 3.14159;
+function calculateArea(radius) {
+  return PI * radius * radius;
+}
+
+module.exports = { PI, calculateArea };
+
+// Importing in CommonJS
+const { PI, calculateArea } = require('./circle');
+console.log(calculateArea(5)); // 78.53975
+```
+**ES Modules:**
+```javascript
+// Exporting in ES Modules
+export const PI = 3.14159;
+export function calculateArea(radius) {
+  return PI * radius * radius;
+}
+
+// Or default export
+export default function calculateCircumference(radius) {
+  return 2 * PI * radius;
+}
+
+// Importing in ES Modules
+import { PI, calculateArea } from './circle.js';
+import calculateCircumference from './circle.js';
+console.log(calculateArea(5)); // 78.53975
+```
+**Key differences:**
+1. **Syntax**:
+  - CommonJS: `module.exports`, `exports`, and `require()`
+  - ES Modules: `export`, `export default`, and `import`.
+2. **Loading mechanism**:
+  - CommonJS loads modules synchronously and evaluates them on demand.
+  - ES Modules loads asynchronously and bindings are live references to exports.
+3. **Static vs. Dynamic**:
+  - CommonJS allows dynamic module loading (conditional requires).
+  - ES Modules imports are static and analyzed at parse time (though dynamic import() is available in ES2020).
+4. **Node.js Support**:
+  - CommonJS is the original Node.js module system.
+  - ES Modules support was added later (stable since Node.js 12+).
+  - Use `.mjs` extension or `"type": "module"` in package.json for ES Modules.
+
+
+## Question 14
+*Reference: [Question 14](node-questions.md#question-14)*
+
+### Q. how does module caching work in Node.js?
+
+Node.js caches modules after they're loaded for the first time, which optimizes performance and ensures module state is maintained across an application.
+
+**Key aspects of module caching:**
+- **Singleton pattern**: When you `require()` a module multiple times, you get the same instance:
+  ```javascript
+  // counter.js
+  let count = 0;
+
+  function increment() {
+    return ++count;
+  }
+
+  module.exports = { increment };
+
+  // app.js
+  const counter1 = require('./counter');
+  const counter2 = require('./counter');
+
+  console.log(counter1.increment()); // 1
+  console.log(counter2.increment()); // 2 (shared state, not 1)
+  console.log(counter1.increment()); // 3 (shared state)
+  ```
+- **Cache location**: Modules are cached in the `require.cache` object, keyed by their resolved filename.
+- **Clearing the cache**:
+```javascript
+// Delete a specific module from cache
+delete require.cache[require.resolve('./my-module')];
+
+// Clear entire cache (rarely needed)
+Object.keys(require.cache).forEach(key => {
+  delete require.cache[key];
+});
+```
+- **Module initialization**: The code in a module runs only once, when it's first required.
+- **Circular dependencies**: Node.js handles circular dependencies by returning partially loaded modules.
+
+
+## Question 15
+*Reference: [Question 15](node-questions.md#question-15)*
+
+### Q. What is NPM, and how do you initialize a new project with it?
+
+NPM (Node Package Manager) is the default package manager for Node.js. It's a command-line tool and online registry that allows developers to discover, install, and manage JavaScript packages and dependencies.
+
+**Key features of NPM:**
+- Package installation and management.
+- Dependency resolution.
+- Script running.
+- Package versioning.
+- Publishing packages.
+
+**Initializing a new Node.js project with NPM:**
+1. **Create a new directory for your project:**
+```bash
+mkdir my-new-project
+cd my-new-project
+```
+2. **Initialize a new npm project:**
+```bash
+npm init
+```
+This interactive command prompts you for information about your project (name, version, description, entry point, test command, git repository, keywords, author, license).
+
+3. **For quick initialization with defaults:**
+```bash
+npm init -y
+```
+This creates a package.json with default values without prompting.
+
+4. **The resulting package.json file:**
+```json
+{
+  "name": "my-new-project",
+  "version": "1.0.0",
+  "description": "My awesome Node.js project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
+```
+5. **Installing dependencies:**
+```bash
+npm install express       # Install and add to dependencies
+npm install jest --save-dev  # Install and add to devDependencies
+```
+6. **Running scripts:**
+Add custom scripts to package.json:
+```json
+"scripts": {
+  "start": "node index.js",
+  "dev": "nodemon index.js",
+  "test": "jest"
+}
+```
+Then run them with:
+```bash
+npm run start
+npm run dev
+npm test  # shorthand for npm run test
+```
+
+NPM is essential to modern Node.js development, allowing developers to leverage the vast ecosystem of open-source packages and tools available in the JavaScript community.
+
+
+## Question 16
+*Reference: [Question 16](node-questions.md#question-16)*
+
+### Q. ## Explain package.json and its key fields.
+
+The `package.json` file is a central manifest for Node.js projects that defines project metadata, dependencies, scripts, and configuration. It serves as the control center for your Node.js project.
+
+Key fields in package.json include:
+```json
+{
+  "name": "my-project",           // Required: Project name
+  "version": "1.0.0",             // Required: Project version (following SemVer)
+  "description": "A sample Node.js project",  // Project description
+  "main": "index.js",             // Entry point of the package
+  "type": "module",               // Module type: "commonjs" (default) or "module" (ESM)
+  
+  "scripts": {                    // NPM scripts that can be run with npm run <script>
+    "start": "node index.js",
+    "test": "jest",
+    "build": "webpack"
+  },
+  
+  "dependencies": {               // Production dependencies
+    "express": "^4.18.2"
+  },
+  
+  "devDependencies": {            // Development-only dependencies
+    "jest": "^29.5.0"
+  },
+  
+  "peerDependencies": {           // Dependencies required by consumers of your package
+    "react": "^18.0.0"
+  },
+  
+  "engines": {                    // Node.js version requirements
+    "node": ">=14.0.0"
+  },
+  
+  "private": true,                // Prevents accidental publishing to NPM registry
+  
+  "author": "Your Name <email@example.com>",  // Author information
+  "license": "MIT",               // License type
+  
+  "repository": {                 // Source code repository
+    "type": "git",
+    "url": "https://github.com/username/repository.git"
+  },
+  
+  "keywords": ["node", "example", "package"],  // Keywords for NPM search
+  
+  "browserslist": [               // Browser compatibility targets
+    ">0.2%",
+    "not dead"
+  ]
+}
+```
+
+Some additional important but less common fields include:
+- `bin`: Defines executable scripts that should be installed.
+- `files`: Specifies files to include when publishing to NPM.
+- `homepage`: Project homepage URL.
+- `bugs`: Issue tracker URL.
+- `config`: Configuration values for use in package scripts.
+
+## Question 17
+*Reference: [Question 17](node-questions.md#question-17)*
+
+### Q. What is the difference between dependencies and devDependencies in package.json?
+
+dependencies and devDependencies serve different purposes in your Node.js project.
+
+**dependencies**:
+- Packages required for your application to run in production.
+- Installed by default with `npm install` or when your package is installed as a dependency.
+- Examples: frameworks (Express, React), utility libraries, database drivers.
+
+**devDependencies**:
+- Packages needed only for local development and testing.
+- Not installed in production environments when using `npm install --production`.
+- Not installed when your package is installed as a dependency by other projects.
+- Examples: testing frameworks, build tools, linters, bundlers.
+
+```json
+{
+  "dependencies": {
+    "express": "^4.18.2",        // Required in production
+    "mongoose": "^7.0.3",        // Required in production
+    "dotenv": "^16.0.3"          // Required in production
+  },
+  "devDependencies": {
+    "jest": "^29.5.0",           // Only for testing
+    "eslint": "^8.38.0",         // Only for code linting
+    "nodemon": "^2.0.22",        // Only for development server
+    "webpack": "^5.80.0"         // Only for bundling
+  }
+}
+```
+Best practices:
+- Use `npm install package --save` or `npm install package` to add to `dependencies`
+- Use `npm install package --save-dev` to add to `devDependencies`
+- Keep production dependencies minimal to reduce deployment size and security surface
+- In CI/CD pipelines, use `npm ci --production` to install only production dependencies
+
+
+## Question 18
+*Reference: [Question 18](node-questions.md#question-18)*
+
+### Q. How do you handle version control conflicts in NPM?
+
+Version conflicts in NPM can occur when different dependencies require incompatible versions of the same package. Here are the strategies to handle them.
+
+1. **Understanding npm's dependency resolution**:
+  - NPM uses a nested dependency structure where each package can have its own dependencies.
+  - From NPM v3 onward, it attempts to flatten dependencies when possible to deduplicate.
+
+2. **Using package-lock.json**:
+  - `package-lock.json` locks down exact versions of all dependencies and their dependencies.
+  - Ensures consistent installations across environments.
+  - Always commit this file to version control.
+
+3. **Resolving conflicts manually**:
+```bash
+# View dependency tree to identify conflicts
+npm ls package-name
+   
+# Force a specific version
+npm install package-name@specific-version
+   
+# Check for outdated packages
+npm outdated
+```
+4. **Using npm-check and npm-check-updates**:
+```bash
+# Install tools
+npm install -g npm-check npm-check-updates
+   
+# Check for updates and conflicts
+npm-check
+   
+# Update all dependencies to latest versions
+ncu -u
+```
+4. **Using resolutions field** (with Yarn or pnpm):
+```json
+{
+  "resolutions": {
+    "package-name": "1.2.3"
+  }
+}
+```
+5. **Using overrides field** (npm v8.3+):
+```json
+{
+  "overrides": {
+    "package-name": "1.2.3"
+  }
+}
+```
+6. **Consider alternative package managers**:
+  1. **Consider alternative package managers**:
+  - Yarn: Better conflict resolution with its "selective version resolution"
+  - pnpm: Uses a symlinked approach that handles conflicts differently
+7. **Auditing and fixing security vulnerabilities**:
+```bash
+# Check for vulnerabilities
+npm audit
+   
+# Fix vulnerabilities
+npm audit fix
+```
+
+## Question 19
+*Reference: [Question 19](node-questions.md#question-19)*
+
+### Q. What are semantic versioning (SemVer) rules in NPM?
+
+Semantic Versioning (SemVer) is a versioning scheme used by NPM packages that follows the format MAJOR.MINOR.PATCH (e.g., 2.11.7).
+**SemVer Rules**:
+1. **Version format**: `MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]`
+  - **MAJOR**: Incremented for incompatible API changes
+  - **MINOR**: Incremented for backward-compatible new functionality
+  - **PATCH**: Incremented for backward-compatible bug fixes
+  - **PRERELEASE**: Optional tag for pre-release versions (e.g., `alpha`, `beta`)
+  - **BUILD**: Optional build metadata (e.g., `build.1234`)
+2. **Version increments**:
+  - `1.0.0` → `2.0.0`: Breaking changes (MAJOR)
+  - `1.0.0` → `1.1.0`: New features, no breaking changes (MINOR)
+  - `1.0.0` → `1.0.1`: Bug fixes, no new features or breaking changes (PATCH)
+3. **Pre-release versions**:
+  - `1.0.0-alpha` < `1.0.0-alpha.1` < `1.0.0-beta` < `1.0.0-rc.1` < `1.0.0`
+
+**NPM's version specifiers**:
+| Symbol | Meaning | Example | Description |
+| :--- | :--- | :--- | :--- |
+| `^` | Compatible with | `^2.11.7` | Allows `2.x.x` but not `3.0.0` |
+| `~` | Approximately | `~2.11.7` | Allows `2.11.x` but not `2.12.0` |
+| `>` | Greater than | `>2.0.0` | Any version greater than `2.0.0` |
+| `>=` | Greater than or equal | `>=2.0.0` | Any version `2.0.0` or greater |
+| `<` | Less than | `<3.0.0` | Any version less than `3.0.0` |
+| `<=` | Less than or equal | `<=3.0.0` | Any version `3.0.0` or less |
+| `=` | Equal | `=2.11.7` | Exactly version `2.11.7` |
+| no symbol | Equal | `2.11.7` | Exactly version `2.11.7` |
+| `1.x` | X-Range | `1.x` | Any version where major is `1` |
+| `*` | Any | `*` | Any version |
+| `latest` | Latest | `latest` | The latest published version |
+
+**Version range examples**:
+- `^1.2.3` allows `1.2.3` to `1.999.999` but not `2.0.0`
+- `~1.2.3` allows `1.2.3` to `1.2.999` but not `1.3.0`
+- `>=1.2.3 <2.0.0` allows versions between `1.2.3` and `2.0.0` (excluding `2.0.0`)
+- `1.2.x` allows any patch version in the `1.2` minor version
+
+## Question 20
+*Reference: [Question 20](node-questions.md#question-20)*
+
+### Q. How can you publish a package to NPM?
+
+Publishing a package to NPM involves several steps to prepare, test, and publish your code:
+1. **Create an NPM account**:
+```bash
+# Create account on npmjs.com or via CLI
+npm adduser
+```
+2. **Login to NPM**:
+```bash
+npm login
+```
+3. **Prepare your package**:
+  - Create a complete `package.json` with:
+    - Unique name (`name` field)
+    - Version (`version` field)
+    - Entry point (`main` field)
+    - Description and keywords
+    - Author and license information
+  - Structure your package properly:
+    - Implement main entry file
+    - Add README.md with documentation
+    - Add LICENSE file
+  - Control included files using either:
+    - `files` field in `package.json`
+    - `.npmignore` file (similar to `.gitignore`)
+    ```json
+    {
+      "name": "my-awesome-package",
+      "version": "1.0.0",
+      "description": "A useful utility library",
+      "main": "index.js",
+      "files": [
+        "dist",
+        "lib",
+        "index.js"
+      ]
+    }
+    ```
+
+4. **Test your package locally**:
+```bash
+# Install your package globally in development mode
+npm link
+   
+# Create a test project and link to your package
+mkdir test-project
+cd test-project
+npm link my-awesome-package
+   
+# Or use npm pack to create a tarball and install it
+npm pack  # Creates my-awesome-package-1.0.0.tgz
+npm install ../my-awesome-package-1.0.0.tgz
+```
+5. **Run integrity checks**:
+```bash
+# Verify package contents
+npm pack
+tar -tf my-awesome-package-1.0.0.tgz
+   
+# Run tests
+npm test
+```
+6. **Publish to NPM registry**:
+```bash
+# For first-time publish
+npm publish
+   
+# For scoped packages (@username/package-name)
+npm publish --access=public
+```
+7. **Versioning and updates**:
+```bash
+# Update version according to SemVer
+npm version patch  # Increments 1.0.0 to 1.0.1
+npm version minor  # Increments 1.0.0 to 1.1.0
+npm version major  # Increments 1.0.0 to 2.0.0
+   
+# Publish the update
+npm publish
+```
+8. **Managing 1. **ackage visibility and distribution**:
+```bash
+# Publish to a custom registry
+npm publish --registry=https://registry.example.com
+   
+# Create an organization-scoped package
+npm init --scope=@myorg
+   
+# Unpublish (only within first 72 hours)
+npm unpublish my-awesome-package@1.0.0
+```
+Advanced publishing considerations:
+- Set up two-factor authentication for account security
+- Use CI/CD pipelines for automated testing and publishing
+- Consider using semantic-release for automated versioning based on commit messages
+- For TypeScript packages, include type definitions and set `types` field in package.json

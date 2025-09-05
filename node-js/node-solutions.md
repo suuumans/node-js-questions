@@ -454,7 +454,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 ```
 
-### Solution 10
+## Solution 10
 *Reference: [Question 10](node-questions.md#question-10)*
 
 ### Q. What is the purpose of the process object in Node.js?
@@ -546,6 +546,8 @@ The process object is essential for:
 - Handling command-line interfaces
 - Managing application lifecycle
 
+
+# Modules and NPM
 
 ## Question 11
 *Reference: [Question 11](node-questions.md#question-11)*

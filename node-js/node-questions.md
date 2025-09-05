@@ -63,3 +63,43 @@ What are semantic versioning (SemVer) rules in NPM?
 
 ## Question 20
 20. How can you publish a package to NPM?
+
+# File System
+
+## Question 21
+What is the fs module in Node.js, and how do you use it to read a file synchronously and asynchronously?
+
+## Question 22
+Explain the difference between fs.readFile() and fs.readFileSync().
+
+## Question 23
+How do you write to a file using the fs module?
+
+## Question 24
+What is fs.createReadStream() and when would you use it?
+
+## Question 25
+How do you handle file paths in a cross-platform way in Node.js?
+
+## Question 26
+Explain fs.watch() and its use cases.
+
+# Events and Event Loop
+
+## Question 27
+What is the EventEmitter class in Node.js?
+
+## Question 28
+How do you create a custom event in Node.js?
+
+## Question 29
+Explain the phases of the Node.js event loop.
+
+## Question 30
+What are the differences between setImmediate(), setTimeout(), and process.nextTick()?
+
+## Question 31
+How does Node.js handle blocking operations?
+
+## Question 32
+What is libuv, and what does it provide to Node.js?

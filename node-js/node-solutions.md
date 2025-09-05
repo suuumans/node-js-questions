@@ -1117,3 +1117,802 @@ Advanced publishing considerations:
 - Use CI/CD pipelines for automated testing and publishing
 - Consider using semantic-release for automated versioning based on commit messages
 - For TypeScript packages, include type definitions and set `types` field in package.json
+
+
+# File System
+
+## Question 21
+*Reference: [Question 21](node-questions.md#question-21)*
+
+### Q. What is the fs module in Node.js, and how do you use it to read a file synchronously and asynchronously?
+
+The `fs` module is a core built-in module in Node.js that provides an API for interacting with the file system. It enables you to work with files and directories, allowing operations such as reading, writing, updating, deleting, and watching files.
+
+**Synchronous file reading (fs.readFileSync):**
+Blocks the event loop until complete, ideal for startup scripts or CLI tools where performance isn't critical. It throws errors immediately, so wrap in try-catch. Returns a Buffer by default or string with encoding.
+
+```javascript
+const fs = require('fs');
+
+try {
+  // Synchronously reads the entire file content
+  const data = fs.readFileSync('example.txt', 'utf8');
+  console.log(data);
+} catch (err) {
+  console.error('Error reading file:', err);
+}
+```
+**Asynchronous file reading:**
+Non-blocking; uses callbacks (fs.readFile) or promises (fs.promises.readFile). Callbacks take error-first pattern; promises enable async/await. Supports AbortSignal for cancellation in modern versions.
+
+```javascript
+const fs = require('fs');
+
+// Using callback approach
+fs.readFile('example.txt', 'utf8', (err, data) => {
+  if (err) {
+    console.error('Error reading file:', err);
+    return;
+  }
+  console.log(data);
+});
+
+// Using Promises (Node.js 10+ with fs.promises)
+const fsPromises = require('fs').promises;
+
+fsPromises.readFile('example.txt', 'utf8')
+  .then(data => console.log(data))
+  .catch(err => console.error('Error reading file:', err));
+
+// Using async/await (modern approach)
+async function readFileAsync() {
+  try {
+    const data = await fsPromises.readFile('example.txt', 'utf8');
+    console.log(data);
+  } catch (err) {
+    console.error('Error reading file:', err);
+  }
+}
+readFileAsync();
+```
+
+## Question 22
+*Reference: [Question 22](node-questions.md#question-22)*
+
+### Q. Explain the difference between fs.readFile() and fs.readFileSync().
+
+fs.readFile() and fs.readFileSync() both read files from the file system, but they differ in how they execute and impact program flow:
+
+**fs.readFile()**:
+- **Asynchronous**: Operates non-blocking
+- **Callback-based**: Takes a callback function that executes when the operation completes
+- **Program flow**: Continues execution without waiting for the file operation to complete
+- **Use case**: Preferred in production environments where performance is critical
+- **Error handling**: Through callback parameters
+```javascript
+fs.readFile('large-file.txt', 'utf8', (err, data) => {
+  if (err) {
+    console.error('Error:', err);
+    return;
+  }
+  console.log('File read complete');
+});
+console.log('This runs before file is read!');
+```
+**fs.readFileSync()**:
+- **Synchronous**: Operates blocking
+- **Return value**: Returns the file content directly
+- **Program flow**: Blocks execution until the file operation completes
+- **Use case**: Simpler code for scripts, CLI tools, or program initialization
+- **Error handling**: Through try/catch blocks
+```javascript
+try {
+  const data = fs.readFileSync('config.txt', 'utf8');
+  console.log('File read complete');
+} catch (err) {
+  console.error('Error:', err);
+}
+console.log('This runs after file is read');
+```
+The key difference is that readFileSync() blocks the event loop until the file is completely read, while readFile() allows the program to continue execution while the file is being read, improving application responsiveness, especially for large files or multiple concurrent operations.
+
+## Question 23
+*Reference: [Question 23](node-questions.md#question-23)*
+
+### Q. How do you write to a file using the fs module?
+
+Writing to files with fs supports sync, callback, and promise APIs—replacing files if they exist (use flags like 'a' for append). It's atomic where possible but not thread-safe for concurrent writes, so sequence ops in production.
+- Synchronous (fs.writeFileSync): Blocks; throws on error.
+- Asynchronous (fs.writeFile): Callback-based; non-blocking.
+- Promises (fs.promises.writeFile): Awaitable; supports AbortSignal.
+
+Data can be string, Buffer, or iterable; options include encoding, mode (permissions), flag ('w' default).
+
+```javascript
+const fs = require('node:fs');
+const fsPromises = require('node:fs/promises');
+const data = 'Hello, Node.js!';
+
+// Synchronous
+try {
+  fs.writeFileSync('output.txt', data, 'utf8'); // Overwrites
+  console.log('Sync write complete');
+} catch (err) {
+  console.error('Sync write error:', err);
+}
+
+// Asynchronous (Callback)
+fs.writeFile('output.txt', data, 'utf8', (err) => {
+  if (err) console.error('Async write error:', err);
+  else console.log('Async write complete');
+});
+
+// Promises
+async function writeAsync() {
+  try {
+    await fsPromises.writeFile('output.txt', data, 'utf8');
+    console.log('Promise write complete');
+  } catch (err) {
+    console.error('Promise write error:', err);
+  }
+}
+writeAsync();
+```
+**Additional options for file writing:**
+```javascript
+// Write with options
+fs.writeFile('output.txt', 'Hello, World!', { 
+  encoding: 'utf8',
+  mode: 0o666,  // File permissions
+  flag: 'w'     // 'w' for write (default), 'a' for append
+}, (err) => {
+  if (err) throw err;
+  console.log('File written with options');
+});
+
+// Write binary data
+const buffer = Buffer.from([0x48, 0x65, 0x6c, 0x6c, 0x6f]); // "Hello" in hex
+fs.writeFile('binary.dat', buffer, (err) => {
+  if (err) throw err;
+  console.log('Binary file written');
+});
+```
+
+## Question 24
+*Reference: [Question 24](node-questions.md#question-24)*
+
+### Q. What is fs.createReadStream() and when would you use it?
+
+fs.createReadStream(path, [options]) creates a Readable stream for efficient, chunked file reading—emitting 'data' events as buffers/strings become available, ideal for handling large files without loading everything into memory. It's a core part of Node's streaming API, inheriting from stream.Readable.
+- **How It Works**: Opens file, reads in chunks (highWaterMark option, default 64KB), supports start/end for ranges, encoding for strings, autoClose (default true) for fd cleanup.
+- **Events**: 'open', 'data', 'end', 'error', 'close'.
+
+```javascript
+const fs = require('fs');
+
+// Create a readable stream
+const readStream = fs.createReadStream('large-file.txt', {
+  encoding: 'utf8',
+  highWaterMark: 64 * 1024 // 64KB chunks (default is 64KB)
+});
+
+// Handle stream events
+readStream.on('data', (chunk) => {
+  console.log(`Received ${chunk.length} bytes of data`);
+  // Process chunk here
+});
+
+readStream.on('end', () => {
+  console.log('Finished reading file');
+});
+
+readStream.on('error', (err) => {
+  console.error('Stream error:', err);
+});
+```
+**When to use fs.createReadStream():**
+1. **Processing large files**: When dealing with files that are too large to fit comfortably in memory (logs, datasets, media files).
+2. **Piping data**: When you need to pipe data between streams, such as from a file to an HTTP response.
+```javascript
+const http = require('http');
+   
+http.createServer((req, res) => {
+  // Stream a video file directly to HTTP response
+  const videoStream = fs.createReadStream('video.mp4');
+  videoStream.pipe(res);
+}).listen(3000);
+```
+3. **Real-time processing**: When you need to process data as it becomes available, without waiting for the entire file.
+```javascript
+const readline = require('readline');
+   
+const fileStream = fs.createReadStream('logs.txt');
+const rl = readline.createInterface({
+  input: fileStream,
+  crlfDelay: Infinity
+});
+   
+// Process the file line by line
+rl.on('line', (line) => {
+  if (line.includes('ERROR')) {
+    console.log(`Found error: ${line}`);
+  }
+});
+```
+4. **Memory efficiency**: When performing operations like file uploads/downloads, parsing large CSV/JSON files, or processing logs
+Streams are memory-efficient, improve application responsiveness, and are one of Node.js's greatest strengths for I/O operations.
+
+## Question 25
+*Reference: [Question 25](node-questions.md#question-25)*
+
+### Q. How do you handle file paths in a cross-platform way in Node.js?
+
+andling file paths across different operating systems (Windows, macOS, Linux) requires special attention due to differences in path separators and formats. Node.js provides the path module specifically for this purpose:
+```javascript
+const path = require('path');
+const fs = require('fs');
+
+// Join path segments in a cross-platform way
+const filePath = path.join(__dirname, 'data', 'config.json');
+
+// Read the file using the platform-appropriate path
+fs.readFile(filePath, 'utf8', (err, data) => {
+  if (err) throw err;
+  console.log(data);
+});
+```
+**Key path module functions for cross-platform compatibility:**
+1. **path.join()**: Joins path segments using the platform-specific separator
+```javascript
+// Windows: C:\Users\username\project\data\config.json
+// Unix: /home/username/project/data/config.json
+const configPath = path.join(__dirname, 'data', 'config.json');
+```
+2. **path.resolve()**: Resolves a sequence of paths to an absolute path
+```javascript
+// Resolves to absolute path from current working directory
+const absolutePath = path.resolve('data', 'config.json');
+```
+3. **path.normalize()**: Normalizes a path, resolving '..' and '.' segments
+```javascript
+const normalizedPath = path.normalize('/data/../config/./settings.json');
+// Results in '/config/settings.json'
+```
+4. **path.parse()**: Returns an object with path components
+```javascript
+const pathInfo = path.parse('/home/user/file.txt');
+// { root: '/', dir: '/home/user', base: 'file.txt', ext: '.txt', name: 'file' }
+```
+5. **path.sep** and **path.delimiter**: 1. Platform-specific path separator and PATH delimiter
+```javascript
+console.log(`Path separator: ${path.sep}`); // '\' on Windows, '/' on Unix
+console.log(`Path delimiter: ${path.delimiter}`); // ';' on Windows, ':' on Unix
+```
+6. **__dirname** and **__filename**: Global variables for current directory and file
+```javascript
+console.log(`Current directory: ${__dirname}`);
+console.log(`Current file: ${__filename}`);
+```
+Always use these path utilities instead of string concatenation to ensure your Node.js applications work consistently across all platforms.
+
+## Question 26
+*Reference: [Question 26](node-questions.md#question-26)*
+
+### Q. Explain fs.watch() and its use cases.
+
+fs.watch() is a method in the fs module that watches for changes on files or directories. It allows you to monitor file system events and execute callbacks when files are modified.
+```javascript
+const fs = require('fs');
+
+// Watch a file for changes
+const watcher = fs.watch('config.json', (eventType, filename) => {
+  console.log(`Event type: ${eventType}`);
+  if (filename) {
+    console.log(`File changed: ${filename}`);
+    // Reload configuration, restart services, etc.
+  }
+});
+
+// Stop watching when needed
+// watcher.close();
+
+// Watch a directory for changes
+fs.watch('./logs', { recursive: true }, (eventType, filename) => {
+  console.log(`Event type: ${eventType}`);
+  console.log(`File changed: ${filename}`);
+});
+```
+**Key use cases for fs.watch():**
+1. **Development tooling**: Creating file watchers for development servers that automatically reload when source files change
+```javascript
+// Simple development server that restarts on file changes
+fs.watch('./src', { recursive: true }, (eventType, filename) => {
+  if (filename.endsWith('.js')) {
+    console.log(`${filename} changed, restarting server...`);
+    // Logic to restart server
+  }
+});
+```
+2. **Configuration monitoring**: Automatically reloading application configuration when config files change
+```javascript
+fs.watch('config.json', (eventType) => {
+  if (eventType === 'change') {
+    console.log('Config changed, reloading...');
+    try {
+      const newConfig = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+      updateApplicationConfig(newConfig);
+    } catch (err) {
+      console.error('Error reloading config:', err);
+    }
+  }
+});
+```
+3. **Log monitoring**: Watching log directories for new files or changes
+```javascript
+fs.watch('./logs', (eventType, filename) => {
+  if (eventType === 'rename' && filename.endsWith('.log')) {
+    console.log(`New log file detected: ${filename}`);
+    // Process new log file
+  }
+});
+```
+4. **Automated testing**: Triggering test runs when source files change
+```javascript
+fs.watch('./src', { recursive: true }, debounce((eventType, filename) => {
+  if (filename.endsWith('.js')) {
+    console.log(`Running tests for ${filename}...`);
+    runTests();
+  }
+}, 500));
+```
+**Important limitations and considerations:**
+1. **Platform differences**: The behavior of `fs.watch()` varies across platforms.
+2. **Event notification**: May receive multiple events for a single change.
+3. **File renaming**: Some systems might report rename events differently.
+4. **Recursive option**: Not supported on all platforms.
+5. **Symlinks**: May not work as expected with symbolic links.
+6. **Performance**: May have performance implications when watching large directory trees.
+
+For more reliable file watching in production applications, third-party packages like chokidar are often preferred as they normalize behavior across platforms and provide additional features.
+
+
+# Events and Event Loop
+
+## Question 27
+*Reference: [Question 27](node-questions.md#question-27)*
+
+### Q. What is the EventEmitter class in Node.js?
+
+The EventEmitter class is a built-in class in Node.js that provides a way to create and manage events. It allows you to create custom events and emit events to listeners.
+
+Key characteristics of EventEmitter:
+```javascript
+const EventEmitter = require('events');
+
+// Create an instance of EventEmitter
+class MyEmitter extends EventEmitter {}
+const myEmitter = new MyEmitter();
+
+// Register an event listener
+myEmitter.on('event', function(a, b) {
+  console.log(a, b); // Prints: 1, 2
+});
+
+// Emit the event
+myEmitter.emit('event', 1, 2);
+```
+EventEmitter provides several important methods:
+- `on()` / `addListener()`: Register a listener for a named event.
+- `once()`: Register a one-time listener that's removed after being called.
+- `emit()`: Trigger an event with optional arguments.
+- `removeListener()` / `off()`: Remove a specific listener.
+- `removeAllListeners()`: Remove all listeners for an event.
+- `setMaxListeners()`: Configure maximum listeners (default is 10).
+- `listeners()`: Return array of listeners for an event.
+
+EventEmitter is the backbone of Node.js's non-blocking I/O model, enabling asynchronous, event-driven programming throughout the Node.js ecosystem.
+
+## Question 28
+*Reference: [Question 28](node-questions.md#question-28)*
+
+### Q. How do you create a custom event in Node.js?
+
+Creating custom events in Node.js involves extending or using the EventEmitter class:
+```javascript
+const EventEmitter = require('events');
+
+// Method 1: Create by extending EventEmitter (recommended)
+class DatabaseConnection extends EventEmitter {
+  connect() {
+    // Simulate connection process
+    setTimeout(() => {
+      // Connection successful
+      this.emit('connected', { 
+        timestamp: new Date(),
+        connectionId: Math.floor(Math.random() * 1000)
+      });
+    }, 1000);
+  }
+  
+  query(sql) {
+    // Simulate query execution
+    setTimeout(() => {
+      if (sql.includes('SELECT')) {
+        this.emit('results', { rows: [{ id: 1, name: 'test' }] });
+      } else {
+        this.emit('error', new Error('Invalid query'));
+      }
+    }, 500);
+  }
+}
+
+// Usage
+const db = new DatabaseConnection();
+
+db.on('connected', (data) => {
+  console.log(`Database connected at ${data.timestamp} with ID: ${data.connectionId}`);
+  db.query('SELECT * FROM users');
+});
+
+db.on('results', (data) => {
+  console.log('Query results:', data.rows);
+});
+
+db.on('error', (err) => {
+  console.error('Database error:', err.message);
+});
+
+db.connect();
+
+// Method 2: Using EventEmitter instance directly
+const myEmitter = new EventEmitter();
+
+// Register event handlers
+myEmitter.on('userLoggedIn', (user) => {
+  console.log(`User logged in: ${user.name}`);
+});
+
+// Later in code, trigger the event
+myEmitter.emit('userLoggedIn', { id: 123, name: 'John Doe' });
+```
+Best practices for custom events:
+1. Use descriptive event names (e.g., 'data', 'end', 'error').
+2. Document the event payload structure.
+3. Always handle 'error' events to prevent crashes.
+4. Avoid creating excessive listeners (monitor with `getMaxListeners()`).
+5. Clean up listeners when they're no longer needed to prevent memory leaks.
+
+## Question 29
+*Reference: [Question 29](node-questions.md#question-29)*
+
+### Q. Explain the phases of the Node.js event loop.
+
+The Node.js event loop is a mechanism that allows Node.js to perform non-blocking I/O operations despite JavaScript being single-threaded. It works by offloading operations to the system kernel whenever possible and operates in several distinct phases:
+1. **Timers phase**: Executes callbacks scheduled by `setTimeout()` and `setInterval()`
+  - Processes timer thresholds that have elapsed.
+  - Executes their callbacks in order of their creation time.
+2. **Pending callbacks phase**: Executes I/O callbacks deferred to the next loop iteration
+  - Handles callbacks for certain system operations (like TCP errors).
+  - Processes any callbacks from previous loop iterations that were deferred.
+3. **Idle, prepare phase**: Internal use only for Node.js
+  - Used by the event loop itself for internal bookkeeping.
+4. **Poll phase**: Retrieves new I/O events and executes I/O related callbacks
+  - Waits for new I/O events if there are none pending.
+  - Calculates how long to block for I/O considering timer thresholds.
+  - Processes events in the poll queue.
+5. **Check phase**: Executes callbacks registered via `setImmediate()`
+  - Runs immediately after the poll phase completes.
+  - Allows execution of callbacks after the poll phase has processed I/O callbacks.
+6. **Close callbacks phase**: Executes close event callbacks
+  - Handles 'close' events (e.g., `socket.on('close', ...)`).
+
+Between each phase, the event loop checks if there are any pending process.nextTick() callbacks or microtasks (like Promise callbacks) and executes them.
+
+This diagram represents the event loop phases:
+```
+   ┌───────────────────────────┐
+┌─>│           timers          │
+│  └─────────────┬─────────────┘
+│  ┌─────────────┴─────────────┐
+│  │     pending callbacks     │
+│  └─────────────┬─────────────┘
+│  ┌─────────────┴─────────────┐
+│  │       idle, prepare       │
+│  └─────────────┬─────────────┘      ┌───────────────┐
+│  ┌─────────────┴─────────────┐      │   incoming:   │
+│  │           poll            │<─────┤  connections, │
+│  └─────────────┬─────────────┘      │   data, etc.  │
+│  ┌─────────────┴─────────────┐      └───────────────┘
+│  │           check           │
+│  └─────────────┬─────────────┘
+│  ┌─────────────┴─────────────┐
+└──┤      close callbacks      │
+   └───────────────────────────┘
+```
+
+In summary, the event loop handles timers, pending callbacks, idle, prepare, poll, check, and close callbacks. It executes callbacks in a specific order to ensure they're processed in a timely manner.
+
+
+## Question 30
+*Reference: [Question 30](node-questions.md#question-30)*
+
+### Q. What are the differences between setImmediate(), setTimeout(), and process.nextTick()?
+
+These three functions all schedule callbacks to be executed, but they differ in when those callbacks are executed:
+
+### process.nextTick()
+```javascript
+console.log('Start');
+process.nextTick(() => {
+  console.log('nextTick callback');
+});
+console.log('End');
+
+// Output:
+// Start
+// End
+// nextTick callback
+```
+- Runs before any other phase of the event loop resumes.
+- Executes after the current operation completes, regardless of the event loop phase.
+- Has higher priority than any other asynchronous operation.
+- Creates a "next tick queue" that's processed after the current operation finishes but before the event loop continues.
+- Can cause "I/O starvation" if used incorrectly (recursive calls prevent the loop from proceeding).
+
+### setImmediate()
+```javascript
+console.log('Start');
+setImmediate(() => {
+  console.log('setImmediate callback');
+});
+console.log('End');
+
+// Output:
+// Start
+// End
+// setImmediate callback
+```
+- Executes in the "check" phase of the event loop.
+- Runs after the poll phase completes.
+- Specifically designed to execute a callback after the current poll phase completes.
+- Particularly useful within I/O cycles to execute callbacks after I/O events have been processed.
+
+### setTimeout(fn, 0)
+```javascript
+console.log('Start');
+setTimeout(() => {
+  console.log('setTimeout callback');
+}, 0);
+console.log('End');
+
+// Output:
+// Start
+// End
+// setTimeout callback
+```
+- Executes in the "timers" phase of the event loop.
+- Has a minimum threshold of 1ms (even with 0ms specified).
+- Timing isn't guaranteed (affected by CPU load and other callbacks).
+- Schedules execution after the specified timeout has elapsed.
+
+### Execution Order
+When used together, their execution order can be challenging to predict:
+```javascript
+setTimeout(() => console.log('setTimeout'), 0);
+setImmediate(() => console.log('setImmediate'));
+process.nextTick(() => console.log('nextTick'));
+
+// Output:
+// nextTick
+// setTimeout or setImmediate (order can vary)
+```
+However, within an I/O cycle, setImmediate is always executed before any timers:
+```javascript
+const fs = require('fs');
+
+fs.readFile(__filename, () => {
+  setTimeout(() => console.log('setTimeout'), 0);
+  setImmediate(() => console.log('setImmediate'));
+});
+
+// Output:
+// setImmediate
+// setTimeout
+```
+
+## Solution 31
+*Reference: [Solution 31](node-questions.md#solution-31)*
+
+### Q. How does Node.js handle blocking operations?
+
+ode.js handles potentially blocking operations through several strategies to maintain its non-blocking, event-driven architecture:
+### 1. Asynchronous APIs
+Node.js provides asynchronous versions of most I/O operations:
+```javascript
+// Synchronous (blocking) version
+const fs = require('fs');
+try {
+  const data = fs.readFileSync('/path/to/file', 'utf8');
+  console.log(data);
+} catch (err) {
+  console.error(err);
+}
+console.log('This will only log after file is read');
+
+// Asynchronous (non-blocking) version
+fs.readFile('/path/to/file', 'utf8', (err, data) => {
+  if (err) {
+    console.error(err);
+    return;
+  }
+  console.log(data);
+});
+console.log('This will log before file is read');
+
+// Modern async/await with promises
+const fsPromises = require('fs').promises;
+async function readFile() {
+  try {
+    const data = await fsPromises.readFile('/path/to/file', 'utf8');
+    console.log(data);
+  } catch (err) {
+    console.error(err);
+  }
+}
+readFile();
+console.log('This will log before file is read');
+```
+### 2. Thread Pool (via libuv)
+For operations that cannot be handled by the operating system's asynchronous interfaces, Node.js uses a thread pool managed by libuv:
+- File system operations
+- CPU-intensive crypto operations
+- DNS lookups (in some cases)
+- Some implementations of zlib operations
+```javascript
+const crypto = require('crypto');
+
+// This is CPU-intensive and would block without the thread pool
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  
+  // This will be executed in the thread pool
+  return crypto.pbkdf2Sync(password, salt, 1000000, 64, 'sha512').toString('hex');
+}
+
+// Using it asynchronously with the thread pool
+crypto.pbkdf2(password, salt, 1000000, 64, 'sha512', (err, derivedKey) => {
+  if (err) throw err;
+  console.log(derivedKey.toString('hex'));
+});
+```
+### 3. Worker Threads (for CPU-bound tasks)
+For truly CPU-intensive tasks, Node.js provides Worker Threads:
+```javascript
+const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
+
+if (isMainThread) {
+  // This is the main thread
+  
+  // Create a worker
+  const worker = new Worker(__filename, {
+    workerData: { numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }
+  });
+  
+  // Listen for messages from the worker
+  worker.on('message', (result) => {
+    console.log(`Sum: ${result}`);
+  });
+  
+  worker.on('error', (err) => {
+    console.error(err);
+  });
+  
+  worker.on('exit', (code) => {
+    if (code !== 0) console.error(`Worker stopped with exit code ${code}`);
+  });
+  
+} else {
+  // This is a worker thread
+  
+  // Calculate sum (CPU-intensive task)
+  const data = workerData;
+  const result = data.numbers.reduce((sum, num) => sum + num, 0);
+  
+  // Send the result back to the main thread
+  parentPort.postMessage(result);
+}
+```
+### 4. Child Processes
+For very intensive operations, Node.js can spawn separate processes:
+```javascript
+const { exec, spawn } = require('child_process');
+
+// Using exec
+exec('find . -type f | wc -l', (error, stdout, stderr) => {
+  if (error) {
+    console.error(`exec error: ${error}`);
+    return;
+  }
+  console.log(`Number of files: ${stdout}`);
+});
+
+// Using spawn for streaming data
+const child = spawn('find', ['.', '-type', 'f']);
+
+child.stdout.on('data', (data) => {
+  console.log(`Found file: ${data}`);
+});
+
+child.stderr.on('data', (data) => {
+  console.error(`stderr: ${data}`);
+});
+
+child.on('close', (code) => {
+  console.log(`Child process exited with code ${code}`);
+});
+```
+By leveraging these strategies, Node.js can maintain its event-driven, non-blocking model even when handling operations that would traditionally block the event loop.
+
+## Solution 32
+*Reference: [Solution 32](node-questions.md#solution-32)*
+
+### What is libuv, and what does it provide to Node.js?
+
+Libuv is a multi-platform C library that provides the event loop and asynchronous I/O capabilities that form the foundation of Node.js. It was originally developed specifically for Node.js but has since been adopted by other projects.
+### Key features and capabilities libuv provides to Node.js:
+1. **Cross-platform event loop** implementation
+  - Abstracts platform-specific mechanisms like epoll (Linux), kqueue (macOS/BSD), event ports (Solaris), and IOCP (Windows)
+  - Enables consistent event-driven programming across operating systems
+2. **Thread pool** for offloading work
+  - Allows CPU-intensive tasks to execute without blocking the main event loop
+  - Handles file system operations, DNS resolution, and some cryptographic operations
+3. **File system operations**
+  - Provides asynchronous file I/O operations
+  - Handles file watching and change notification
+4. **Network I/O**
+  - TCP/UDP socket handling
+  - DNS resolution
+  - Pipe support for inter-process communication
+5. **Child process management**
+  - Process spawning
+  - Process stdio handling
+  - Process termination
+6. **Thread synchronization primitives**
+  - Mutexes, semaphores, condition variables
+  - Thread-local storage
+7. **High-resolution time functionality**
+  - Precise timers
+  - Performance measurement capabilities
+8. **Signal handling**
+  - Management of system signals (SIGINT, SIGTERM, etc.)
+
+### Architecture relationship between Node.js, V8, and libuv:
+```
+┌───────────────────────────┐
+│           Node.js         │ JavaScript API
+└─────────────┬─────────────┘
+┌─────────────┴─────────────┐
+│             V8            │ JavaScript Engine
+└─────────────┬─────────────┘
+┌─────────────┴─────────────┐
+│            libuv          │ Asynchronous I/O
+└───────────────────────────┘
+```
+Example of how Node.js APIs use libuv under the hood:
+```javascript
+// This simple Node.js code:
+const fs = require('fs');
+
+fs.readFile('/path/to/file', (err, data) => {
+  if (err) throw err;
+  console.log(data);
+});
+
+// Translates through layers:
+// 1. Node.js fs module calls libuv's file operations
+// 2. libuv schedules the I/O operation in its event loop
+// 3. libuv delegates the actual file read to its thread pool
+// 4. When complete, libuv triggers the callback in the next event loop iteration
+// 5. V8 executes the JavaScript callback with the result
+```
+Libuv effectively handles the most challenging aspect of Node.js's architecture - managing asynchronous I/O operations efficiently across different operating systems. It allows Node.js to maintain its single-threaded programming model while still achieving high performance for I/O-bound applications.

@@ -1916,3 +1916,765 @@ fs.readFile('/path/to/file', (err, data) => {
 // 5. V8 executes the JavaScript callback with the result
 ```
 Libuv effectively handles the most challenging aspect of Node.js's architecture - managing asynchronous I/O operations efficiently across different operating systems. It allows Node.js to maintain its single-threaded programming model while still achieving high performance for I/O-bound applications.
+
+# Node.js Streams
+
+## Solution 33
+*Reference: [Solution 33](node-questions.md#solution-33)*
+
+### Q. What are streams in Node.js, and what types are there (Readable, Writable, Duplex, Transform)?
+
+Streams in Node.js are abstract interfaces for working with streaming data. They allow you to process data piece by piece (chunks) instead of loading the entire dataset into memory, making them memory-efficient for handling large amounts of data or real-time information.
+
+**he four main types of streams in Node.js are:**
+1. **Readable Streams**: Sources that you can read data from (but not write to)
+  - Examples: `fs.createReadStream()`, HTTP request objects, process.stdin.
+  - Used for reading data from a source in chunks.
+2. **Writable Streams**: Destinations that you can write data to (but not read from)
+  - Examples: `fs.createWriteStream()`, HTTP response objects, process.stdout.
+  - Used for writing data to a destination in chunks.
+3. **Duplex Streams**: Both readable and writable (independent channels)
+  - Examples: TCP sockets, Zlib streams.
+  - Can both read from and write to a source.
+4. **Transform Streams**: Special type of duplex streams where the output is computed based on the input
+  - Examples: zlib.createGzip(), crypto streams.
+  - Transforms data as it's being read or written (data out is transformation of data in).
+
+All stream types are instances of EventEmitter, allowing them to emit and listen for events during data processing.
+
+## Solution 34
+*Reference: [Solution 34](node-questions.md#solution-34)*
+
+### Q.  Provide an example of piping a readable stream to a writable stream.
+
+Here's an example of piping a readable stream to a writable stream to create a file copy operation:
+
+```javascript
+const fs = require('fs');
+
+// Create a readable stream for reading from a file
+const readableStream = fs.createReadStream('source-file.txt', {
+  encoding: 'utf8',
+  highWaterMark: 64 * 1024 // 64KB chunks
+});
+
+// Create a writable stream for writing to another file
+const writableStream = fs.createWriteStream('destination-file.txt');
+
+// Pipe the readable stream to the writable stream
+readableStream.pipe(writableStream);
+
+// Handle events
+writableStream.on('finish', () => {
+  console.log('File copy operation completed successfully');
+});
+
+readableStream.on('error', (err) => {
+  console.error('Error reading file:', err);
+});
+
+writableStream.on('error', (err) => {
+  console.error('Error writing file:', err);
+});
+```
+Another common example is streaming a file to an HTTP response:
+```javascript
+const fs = require('fs');
+const http = require('http');
+
+http.createServer((req, res) => {
+  // Set appropriate headers for video content
+  res.writeHead(200, {'Content-Type': 'video/mp4'});
+  
+  // Create a readable stream from a video file
+  const videoStream = fs.createReadStream('video.mp4');
+  
+  // Pipe the video stream directly to the HTTP response
+  videoStream.pipe(res);
+  
+  // Handle errors
+  videoStream.on('error', (err) => {
+    console.error('Error streaming video:', err);
+    res.end('Error occurred while streaming');
+  });
+}).listen(3000, () => {
+  console.log('Server running at http://localhost:3000/');
+});
+```
+
+## Question 35
+*Reference: [Question 35](node-questions.md#question-35)*
+
+### Q. How do you handle errors in streams?
+
+roper error handling is crucial in stream operations to prevent application crashes. Since streams are EventEmitters, they emit 'error' events when something goes wrong.
+
+**Best practices for handling stream errors:**
+1. **Always listen for the 'error' event on all streams:**
+```javascript
+const fs = require('fs');
+const readStream = fs.createReadStream('non-existent-file.txt');
+
+readStream.on('error', (err) => {
+  console.error('Error occurred:', err.message);
+  // Perform cleanup or recovery operations
+});
+```
+2. **Error handling with pipe():**
+When using pipe(), errors from the source stream don't automatically propagate to destination streams. You need to handle errors on each stream separately:
+```javascript
+const fs = require('fs');
+const readStream = fs.createReadStream('source.txt');
+const writeStream = fs.createWriteStream('destination.txt');
+
+// Handle errors on both streams
+readStream.on('error', (err) => {
+  console.error('Read error:', err.message);
+  // Clean up the write stream if needed
+  writeStream.end();
+});
+
+writeStream.on('error', (err) => {
+  console.error('Write error:', err.message);
+  // Stop the read stream to prevent more data flow
+  readStream.destroy();
+});
+
+// Pipe data
+readStream.pipe(writeStream);
+```
+3. **Using pipeline() (Node.js v10.0.0+) for automatic error propagation:**
+```javascript
+const { pipeline } = require('stream');
+const fs = require('fs');
+
+const readStream = fs.createReadStream('source.txt');
+const writeStream = fs.createWriteStream('destination.txt');
+
+pipeline(
+  readStream,
+  writeStream,
+  (err) => {
+    if (err) {
+      console.error('Pipeline failed:', err.message);
+    } else {
+      console.log('Pipeline succeeded');
+    }
+  }
+);
+```
+4. **Promisified version with stream/promises (Node.js v15.0.0+):**
+```javascript
+const { pipeline } = require('stream/promises');
+const fs = require('fs');
+
+async function copyFile() {
+  try {
+    await pipeline(
+      fs.createReadStream('source.txt'),
+      fs.createWriteStream('destination.txt')
+    );
+    console.log('Pipeline succeeded');
+  } catch (err) {
+    console.error('Pipeline failed:', err.message);
+  }
+}
+
+copyFile();
+```
+
+## Solution 36
+*Reference: [Solution 36](node-questions.md#solution-36)*
+
+### Q. What is backpressure in streams, and how is it managed?
+
+Backpressure is a mechanism in Node.js streams that handles situations where data is coming in faster than it can be processed or written. It's essential for preventing memory overflow and ensuring efficient data processing.
+
+**How backpressure works:**
+1. When a writable stream's internal buffer fills up (reaches highWaterMark), the `write()` method returns `false`.
+2. This signals to the source (readable stream) that it should temporarily pause sending data.
+3. When the writable stream's buffer drains (emits a 'drain' event), the readable stream can resume sending data.
+
+**Managing backpressure:**
+1. **Using pipe()** - The simplest way to handle backpressure automatically:
+```javascript
+readableStream.pipe(writableStream);
+```
+The `pipe()` method handles backpressure internally by pausing the readable stream when necessary and resuming it when the writable stream emits a 'drain' event.
+
+2. **Manual backpressure management** - When not using pipe():
+```javascript
+const fs = require('fs');
+
+const readStream = fs.createReadStream('largefile.txt');
+const writeStream = fs.createWriteStream('destination.txt');
+
+readStream.on('data', (chunk) => {
+  // Try to write the chunk
+  const canContinue = writeStream.write(chunk);
+  
+  // If write returns false, pause the readable stream
+  if (!canContinue) {
+    readStream.pause();
+    
+    // Resume the readable stream once the writable stream drains
+    writeStream.once('drain', () => {
+      readStream.resume();
+    });
+  }
+});
+
+readStream.on('end', () => {
+  writeStream.end();
+});
+
+// Error handling
+readStream.on('error', (err) => {
+  console.error('Read error:', err);
+  writeStream.end();
+});
+
+writeStream.on('error', (err) => {
+  console.error('Write error:', err);
+  readStream.destroy();
+});
+```
+3 **Using pipeline() (Node.js v10.0.0+)** - Handles backpressure and errors automatically:
+```javascript
+const { pipeline } = require('stream');
+
+pipeline(
+  fs.createReadStream('largefile.txt'),
+  fs.createWriteStream('destination.txt'),
+  (err) => {
+    if (err) {
+      console.error('Pipeline failed:', err);
+    } else {
+      console.log('Pipeline succeeded');
+    }
+  }
+);
+```
+
+## Question 37
+*Reference: [Question 37](node-questions.md#question-37)*
+
+### Q. Explain the difference between flowing mode and paused mode in readable streams.
+
+eadable streams in Node.js can operate in two modes: flowing and paused (non-flowing). These modes determine how data is consumed from the stream.
+
+**Paused Mode:**
+- Default mode for all Readable streams.
+- Data must be explicitly requested using the `read()` method.
+- You control when and how much data is read.
+- Works with the 'readable' event to signal that data is available to be read.
+- More control but requires more manual code.
+
+```javascript
+const fs = require('fs');
+const readStream = fs.createReadStream('file.txt');
+
+// Using paused mode
+readStream.on('readable', () => {
+  let chunk;
+  // read() returns null when no more data is available
+  while (null !== (chunk = readStream.read())) {
+    console.log(`Read ${chunk.length} bytes of data`);
+    console.log(chunk.toString());
+  }
+});
+
+readStream.on('end', () => {
+  console.log('No more data to read');
+});
+
+readStream.on('error', (err) => {
+  console.error('Error:', err);
+});
+```
+**Flowing Mode:**
+- Stream automatically pushes data to the consumer as soon as it's available.
+- Triggered by attaching a 'data' event handler, using `pipe()`, or calling `resume()`.
+- Easier to use but offers less control over data consumption.
+- Data can be lost if not handled immediately.
+```javascript
+const fs = require('fs');
+const readStream = fs.createReadStream('file.txt');
+
+// Switch to flowing mode by adding a 'data' event handler
+readStream.on('data', (chunk) => {
+  console.log(`Received ${chunk.length} bytes of data`);
+  console.log(chunk.toString());
+});
+
+readStream.on('end', () => {
+  console.log('No more data to read');
+});
+
+readStream.on('error', (err) => {
+  console.error('Error:', err);
+});
+```
+**Switching between modes:**
+- From paused to flowing: Add a 'data' event listener, call stream.resume(), or pipe to another stream.
+- From flowing to paused: Call stream.pause(), remove all 'data' event listeners, or unpipe() from all destinations.
+```javascript
+const readStream = fs.createReadStream('file.txt');
+
+// Start in flowing mode
+readStream.on('data', processChunk);
+
+// Later, switch to paused mode
+setTimeout(() => {
+  readStream.pause();
+  console.log('Stream paused');
+  
+  // Process some data in paused mode
+  process.nextTick(() => {
+    console.log('Processing in paused mode');
+    let chunk = readStream.read();
+    if (chunk) processChunk(chunk);
+    
+    // Switch back to flowing mode
+    readStream.resume();
+    console.log('Stream resumed to flowing mode');
+  });
+}, 1000);
+
+function processChunk(chunk) {
+  console.log(`Processed ${chunk.length} bytes`);
+}
+```
+
+# HTTP and Servers
+
+## Solution 38
+*Reference: [Solution 38](node-questions.md#solution-38)*
+
+### Q. How do you create a basic HTTP server in Node.js using the http module?
+
+You can create a basic HTTP server in Node.js using the built-in http module, which provides the functionality to create and manage HTTP servers.
+
+```javascript
+// Basic HTTP Server
+const http = require('http');
+
+// Create server instance
+const server = http.createServer((req, res) => {
+  // Set response headers
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain');
+  
+  // Send response body
+  res.end('Hello, World!');
+});
+
+// Define port
+const PORT = 3000;
+
+// Start listening
+server.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}/`);
+});
+```
+This simple server listens for incoming requests on port 3000 and responds with "Hello, World!" to every request. The createServer() method takes a callback function that receives two parameters:
+- `req` (request): Contains information about the incoming request
+- `res` (response): Used to formulate and send a response back to the client
+
+## Solution 39
+*Reference: [Solution 39](node-questions.md#solution-39)*
+
+### Q. What is the request and response object in an HTTP server?
+
+The request (req) and response (res) objects are core components of Node.js HTTP servers, providing interfaces for handling HTTP interactions.
+
+**Request Object (`req`)**
+The request object contains information about the incoming HTTP request:
+```javascript
+const http = require('http');
+
+http.createServer((req, res) => {
+  console.log('Method:', req.method);          // GET, POST, PUT, etc.
+  console.log('URL:', req.url);                // Path requested (/api/users, etc.)
+  console.log('Headers:', req.headers);        // Request headers object
+  console.log('HTTP Version:', req.httpVersion); // HTTP version used
+  
+  // Reading request body (for POST, PUT requests)
+  let body = '';
+  req.on('data', (chunk) => {
+    body += chunk.toString();
+  });
+  
+  req.on('end', () => {
+    console.log('Body:', body);
+    res.end('Request received');
+  });
+}).listen(3000);
+```
+**Response Object (`res`)**
+The response object is used to send data back to the client:
+```javascript
+const http = require('http');
+
+http.createServer((req, res) => {
+  // Set status code
+  res.statusCode = 200; // OK
+  
+  // Set response headers
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('X-Custom-Header', 'CustomValue');
+  
+  // Alternatively, use writeHead to set status and headers at once
+  // res.writeHead(200, {
+  //   'Content-Type': 'application/json',
+  //   'X-Custom-Header': 'CustomValue'
+  // });
+  
+  // Write response body (can be called multiple times)
+  res.write('{"message": ');
+  
+  // End response with optional final data
+  res.end('"Hello, World!"}');
+}).listen(3000);
+```
+Key response methods:
+- `res.statusCode`: Sets the HTTP status code
+- `res.setHeader(name, value)`: Sets a response header
+- `res.writeHead(statusCode, headers)`: Writes the status code and headers
+- `res.write(data)`: Writes a chunk of the response body
+- `res.end([data])`: Signals that all response headers and body have been sent
+
+## Question 40
+*Reference: [Question 40](node-questions.md#question-40)*
+
+### Q. Explain how to handle different HTTP methods (GET, POST, etc.) in a Node.js server.
+
+You can handle different HTTP methods in a Node.js server by checking the req.method property and implementing method-specific logic:
+```javascript
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  const url = req.url;
+  
+  // Set default response headers
+  res.setHeader('Content-Type', 'application/json');
+  
+  // Handle different HTTP methods
+  switch(req.method) {
+    case 'GET':
+      if (url === '/api/users') {
+        // Handle GET request to /api/users
+        res.statusCode = 200;
+        res.end(JSON.stringify({ users: ['John', 'Jane', 'Bob'] }));
+      } else if (url.match(/\/api\/users\/\d+/)) {
+        // Handle GET request to /api/users/:id
+        const id = url.split('/').pop();
+        res.statusCode = 200;
+        res.end(JSON.stringify({ id, name: `User ${id}` }));
+      } else {
+        // Handle 404 for unknown GET routes
+        res.statusCode = 404;
+        res.end(JSON.stringify({ error: 'Not Found' }));
+      }
+      break;
+      
+    case 'POST':
+      if (url === '/api/users') {
+        // Handle POST request to /api/users
+        let body = '';
+        
+        req.on('data', (chunk) => {
+          body += chunk.toString();
+        });
+        
+        req.on('end', () => {
+          try {
+            const userData = JSON.parse(body);
+            // Process user data (e.g., save to database)
+            res.statusCode = 201;
+            res.end(JSON.stringify({ 
+              message: 'User created successfully',
+              user: userData 
+            }));
+          } catch (error) {
+            res.statusCode = 400;
+            res.end(JSON.stringify({ error: 'Invalid JSON' }));
+          }
+        });
+      } else {
+        // Handle 404 for unknown POST routes
+        res.statusCode = 404;
+        res.end(JSON.stringify({ error: 'Not Found' }));
+      }
+      break;
+      
+    case 'PUT':
+      if (url.match(/\/api\/users\/\d+/)) {
+        // Handle PUT request to /api/users/:id
+        const id = url.split('/').pop();
+        let body = '';
+        
+        req.on('data', (chunk) => {
+          body += chunk.toString();
+        });
+        
+        req.on('end', () => {
+          try {
+            const userData = JSON.parse(body);
+            // Update user (e.g., in database)
+            res.statusCode = 200;
+            res.end(JSON.stringify({ 
+              message: `User ${id} updated`,
+              user: userData 
+            }));
+          } catch (error) {
+            res.statusCode = 400;
+            res.end(JSON.stringify({ error: 'Invalid JSON' }));
+          }
+        });
+      } else {
+        res.statusCode = 404;
+        res.end(JSON.stringify({ error: 'Not Found' }));
+      }
+      break;
+      
+    case 'DELETE':
+      if (url.match(/\/api\/users\/\d+/)) {
+        // Handle DELETE request to /api/users/:id
+        const id = url.split('/').pop();
+        // Delete user (e.g., from database)
+        res.statusCode = 200;
+        res.end(JSON.stringify({ message: `User ${id} deleted` }));
+      } else {
+        res.statusCode = 404;
+        res.end(JSON.stringify({ error: 'Not Found' }));
+      }
+      break;
+      
+    default:
+      // Handle unsupported methods
+      res.statusCode = 405;
+      res.setHeader('Allow', 'GET, POST, PUT, DELETE');
+      res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+  }
+});
+
+server.listen(3000, () => {
+  console.log('Server running at http://localhost:3000/');
+});
+```
+
+## Solution 41
+*Reference: [Solution 41](node-questions.md#solution-41)*
+
+### Q. What is middleware in the context of Node.js servers?
+
+Middleware in Node.js server context refers to functions that have access to the request object, the response object, and the next middleware function in the application's request-response cycle. Middleware functions can -
+1. Execute any code
+2. Modify the request and response objects
+3. End the request-response cycle
+4. Call the next middleware in the stack
+While Express.js made middleware popular, you can implement middleware pattern in vanilla Node.js as well.
+```javascript
+const http = require('http');
+
+// Middleware functions
+const loggerMiddleware = (req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next(); // Call the next middleware
+};
+
+const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || authHeader !== 'Bearer valid-token') {
+    res.statusCode = 401;
+    res.end(JSON.stringify({ error: 'Unauthorized' }));
+    return; // Stop the middleware chain
+  }
+  
+  // Add user info to request
+  req.user = { id: 1, name: 'Authenticated User' };
+  next();
+};
+
+// Create middleware stack
+const createStack = (...middlewares) => {
+  return (req, res) => {
+    function executeMiddleware(i) {
+      if (i < middlewares.length) {
+        middlewares[i](req, res, () => executeMiddleware(i + 1));
+      }
+    }
+    executeMiddleware(0);
+  };
+};
+
+// Main request handler (final middleware)
+const requestHandler = (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  
+  if (req.url === '/api/private') {
+    res.statusCode = 200;
+    res.end(JSON.stringify({ 
+      message: 'Private data', 
+      user: req.user 
+    }));
+  } else {
+    res.statusCode = 200;
+    res.end(JSON.stringify({ message: 'Public endpoint' }));
+  }
+};
+
+// Conditional middleware stacks
+const server = http.createServer((req, res) => {
+  if (req.url.startsWith('/api/private')) {
+    // Protected routes use all middleware
+    createStack(loggerMiddleware, authMiddleware, requestHandler)(req, res);
+  } else {
+    // Public routes only use logger middleware
+    createStack(loggerMiddleware, requestHandler)(req, res);
+  }
+});
+
+server.listen(3000, () => {
+  console.log('Server running at http://localhost:3000/');
+});
+```
+Common uses of middleware include:
+- Logging requests
+- Authentication/authorization
+- CORS handling (as seen in your long-term memories from around August 31, 2025)
+- Body parsing
+- Error handling
+- Response compression
+
+
+## Question 42
+*Reference: [Question 42](node-questions.md#question-42)*
+
+### Q. How do you parse query parameters and body data in HTTP requests?
+
+Query parameters appear in the URL after a question mark (?) and can be parsed using the built-in url module
+```javascript
+const http = require('http');
+const url = require('url');
+
+const server = http.createServer((req, res) => {
+  // Parse the URL and query parameters
+  const parsedUrl = url.parse(req.url, true);
+  const pathname = parsedUrl.pathname;
+  const queryParams = parsedUrl.query;
+  
+  res.setHeader('Content-Type', 'application/json');
+  
+  if (pathname === '/api/search') {
+    // Access query parameters
+    const term = queryParams.term || '';
+    const limit = parseInt(queryParams.limit) || 10;
+    const page = parseInt(queryParams.page) || 1;
+    
+    res.statusCode = 200;
+    res.end(JSON.stringify({
+      search: {
+        term,
+        limit,
+        page
+      },
+      results: [`Results for "${term}" (page ${page}, limit ${limit})`]
+    }));
+  } else {
+    res.statusCode = 404;
+    res.end(JSON.stringify({ error: 'Not Found' }));
+  }
+});
+
+server.listen(3000, () => {
+  console.log('Server running at http://localhost:3000/');
+});
+```
+For a URL like `/api/search?term=nodejs&limit=5&page=2`, this will parse `term`, `limit`, and `page`.
+
+**Parsing Body Data**
+
+Parsing body data from POST/PUT requests requires reading the data in chunks -
+```javascript
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  if (req.method === 'POST' || req.method === 'PUT') {
+    let body = '';
+    
+    // Handle data chunks
+    req.on('data', (chunk) => {
+      body += chunk.toString();
+      
+      // Limit body size to prevent attacks
+      if (body.length > 1e6) {
+        body = '';
+        res.statusCode = 413; // Payload Too Large
+        res.end(JSON.stringify({ error: 'Request body too large' }));
+        req.connection.destroy();
+      }
+    });
+    
+    // Process completed body
+    req.on('end', () => {
+      res.setHeader('Content-Type', 'application/json');
+      
+      try {
+        // For JSON data
+        if (req.headers['content-type'] === 'application/json') {
+          const jsonData = JSON.parse(body);
+          res.statusCode = 200;
+          res.end(JSON.stringify({ 
+            message: 'JSON data received',
+            data: jsonData
+          }));
+        } 
+        // For form data
+        else if (req.headers['content-type'] === 'application/x-www-form-urlencoded') {
+          const formData = new URLSearchParams(body);
+          const formObject = {};
+          
+          for (const [key, value] of formData.entries()) {
+            formObject[key] = value;
+          }
+          
+          res.statusCode = 200;
+          res.end(JSON.stringify({ 
+            message: 'Form data received',
+            data: formObject
+          }));
+        }
+        else {
+          res.statusCode = 200;
+          res.end(JSON.stringify({ 
+            message: 'Raw data received',
+            data: body
+          }));
+        }
+      } catch (error) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ 
+          error: 'Invalid data format',
+          details: error.message
+        }));
+      }
+    });
+  } else {
+    res.statusCode = 405;
+    res.setHeader('Allow', 'POST, PUT');
+    res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+  }
+});
+
+server.listen(3000, () => {
+  console.log('Server running at http://localhost:3000/');
+});
+```
+This server can handle:
+- JSON data with `Content-Type: application/json`
+- Form data with `Content-Type: application/x-www-form-urlencoded`
+- Raw text/binary data with other content types
+For more complex applications, it's common to use libraries like body-parser (or built-in middleware in Express.js) to handle parsing of different content types more elegantly.

@@ -103,3 +103,37 @@ How does Node.js handle blocking operations?
 
 ## Question 32
 What is libuv, and what does it provide to Node.js?
+
+# Streams
+
+## Question 33
+What are streams in Node.js, and what types are there (Readable, Writable, Duplex, Transform)?
+
+## Question 34
+Provide an example of piping a readable stream to a writable stream.
+
+## Question 35
+How do you handle errors in streams?
+
+## Question 36
+What is backpressure in streams, and how is it managed?
+
+## Question 37
+Explain the difference between flowing mode and paused mode in readable streams.
+
+# HTTP and Servers
+
+## Question 38
+How do you create a basic HTTP server in Node.js using the http module?
+
+## Question 39
+What is the request and response object in an HTTP server?
+
+## Question 40
+Explain how to handle different HTTP methods (GET, POST, etc.) in a Node.js server.
+
+## Question 41
+What is middleware in the context of Node.js servers?
+
+## Question 42
+How do you parse query parameters and body data in HTTP requests?

@@ -2284,9 +2284,9 @@ This simple server listens for incoming requests on port 3000 and responds with 
 ## Solution 39
 *Reference: [Solution 39](node-questions.md#solution-39)*
 
-### Q. What is the request and response object in an HTTP server?
+### Q. What is the `request` and `response` object in an HTTP server?
 
-The request (req) and response (res) objects are core components of Node.js HTTP servers, providing interfaces for handling HTTP interactions.
+The request (`req`) and response (`res`) objects are core components of Node.js HTTP servers, providing interfaces for handling HTTP interactions.
 
 **Request Object (`req`)**
 The request object contains information about the incoming HTTP request:
@@ -2294,7 +2294,7 @@ The request object contains information about the incoming HTTP request:
 const http = require('http');
 
 http.createServer((req, res) => {
-  console.log('Method:', req.method);          // GET, POST, PUT, etc.
+  console.log('Method:', req.method);          // GET, POST, PUT, DELETE, etc.
   console.log('URL:', req.url);                // Path requested (/api/users, etc.)
   console.log('Headers:', req.headers);        // Request headers object
   console.log('HTTP Version:', req.httpVersion); // HTTP version used
@@ -2470,10 +2470,11 @@ server.listen(3000, () => {
 ### Q. What is middleware in the context of Node.js servers?
 
 Middleware in Node.js server context refers to functions that have access to the request object, the response object, and the next middleware function in the application's request-response cycle. Middleware functions can -
-1. Execute any code
-2. Modify the request and response objects
-3. End the request-response cycle
-4. Call the next middleware in the stack
+1. Execute any code.
+2. Modify the request and response objects.
+3. End the request-response cycle.
+4. Call the next middleware in the stack.
+
 While Express.js made middleware popular, you can implement middleware pattern in vanilla Node.js as well.
 ```javascript
 const http = require('http');
@@ -2678,3 +2679,1140 @@ This server can handle:
 - Form data with `Content-Type: application/x-www-form-urlencoded`
 - Raw text/binary data with other content types
 For more complex applications, it's common to use libraries like body-parser (or built-in middleware in Express.js) to handle parsing of different content types more elegantly.
+
+
+# Express.js
+
+## Solution 43
+*Reference: [Solution 43](node-questions.md#solution-43)*
+
+### Q. What is Express.js, and why is it commonly used with Node.js?
+
+Express.js is a minimal, unopinionated web application framework for Node.js designed to make building web applications and APIs simpler and more organized. It provides a robust set of features for web and mobile applications without obscuring Node.js's core functionality.
+
+**Key features of Express.js:**
+- **Middleware architecture**: Allows for processing requests through a series of functions.
+- **Routing system**: Simplifies directing HTTP requests to appropriate handlers.
+- **Template engine integration**: Supports various view engines like Pug, EJS, and Handlebars.
+- **Error handling**: Provides built-in error handling mechanisms.
+- **HTTP utility methods**: Simplifies sending various HTTP responses.
+
+**Why Express.js is commonly used with Node.js:**
+1. **Simplicity**: Express provides a thin layer of fundamental web application features without obscuring Node's features.
+2. **Middleware ecosystem**: The middleware pattern allows for easy integration of additional functionalities (authentication, logging, CORS, etc.).
+3. **Performance**: Being lightweight, Express adds minimal overhead to Node.js applications.
+4. **Flexibility**: Unlike opinionated frameworks, Express allows developers to structure applications as they see fit.
+5. **Community support**: Express has a large community, extensive documentation, and numerous plugins.
+6. **Industry adoption**: Many major companies use Express in production, making it a battle-tested solution.
+
+Express.js strikes a perfect balance between providing essential structure and allowing developer freedom, making it the most popular web framework for Node.js applications.
+
+## Solution 44
+*Reference: [Solution 44](node-questions.md#solution-44)*
+
+### Q. How do you set up a basic Express server?
+
+Setting up a basic Express server involves a few straightforward steps:
+
+**Step 1: Initialize your project and install Express**
+```bash
+mkdir my-express-app
+cd my-express-app
+npm init -y
+npm install express
+```
+**Step 2: Create a server file (e.g., app.js or server.js)**
+```javascript
+// Import the express module
+const express = require('express');
+
+// Create an Express application
+const app = express();
+
+// Define a port
+const PORT = process.env.PORT || 3000;
+
+// Create a simple route
+app.get('/', (req, res) => {
+  res.send('Hello World! Welcome to my Express server.');
+});
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+```
+**Step 3: Run your server**
+```bash
+node app.js
+```
+**More complete example with additional common setup:**
+```javascript
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware for parsing JSON and URL-encoded data
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Middleware for logging requests
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url} at ${new Date().toISOString()}`);
+  next();
+});
+
+// Basic routes
+app.get('/', (req, res) => {
+  res.send('Hello World!');
+});
+
+app.get('/api/users', (req, res) => {
+  res.json([
+    { id: 1, name: 'John Doe' },
+    { id: 2, name: 'Jane Smith' }
+  ]);
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+```
+
+## Solution 45
+*Reference: [Solution 45](node-questions.md#solution-45)*
+
+### Q. Explain routing in Express with examples.
+
+Routing in Express refers to determining how an application responds to client requests to specific endpoints, which consist of a URI (path) and a specific HTTP request method (GET, POST, PUT, DELETE, etc.). Routing is one of Express's core features that makes building web applications and APIs straightforward.
+**Basic Route Structure:**
+```javascript
+app.METHOD(PATH, HANDLER);
+```
+- `app` is an instance of Express
+- `METHOD` is an HTTP request method (lowercase)
+- `PATH` is the route path on the server
+- `HANDLER` is the function executed when the route is matched
+
+**Basic Routing Examples:**
+```javascript
+const express = require('express');
+const app = express();
+
+// Basic GET route
+app.get('/', (req, res) => {
+  res.send('Home Page');
+});
+
+// Route for about page
+app.get('/about', (req, res) => {
+  res.send('About Us Page');
+});
+
+// POST route for form submission
+app.post('/submit-form', (req, res) => {
+  res.send('Form submitted successfully!');
+});
+
+// PUT route for updating a resource
+app.put('/users/:id', (req, res) => {
+  res.send(`User ${req.params.id} updated`);
+});
+
+// DELETE route for removing a resource
+app.delete('/users/:id', (req, res) => {
+  res.send(`User ${req.params.id} deleted`);
+});
+
+// Handle 404 - Route not found
+app.use((req, res) => {
+  res.status(404).send('Page not found');
+});
+```
+
+**Route Handlers:**
+Route handlers can be a single function, a series of functions, or an array of functions:
+```javascript
+// Single handler
+app.get('/example1', (req, res) => {
+  res.send('Example with single handler');
+});
+
+// Multiple handlers as middleware
+app.get('/example2', 
+  (req, res, next) => {
+    console.log('First handler');
+    req.user = { id: 1, name: 'John' };
+    next();
+  },
+  (req, res) => {
+    res.send(`Example with user: ${req.user.name}`);
+  }
+);
+
+// Array of handlers
+const validateUser = (req, res, next) => {
+  // Validation logic
+  if (req.query.userId) {
+    next();
+  } else {
+    res.status(400).send('User ID required');
+  }
+};
+
+const getUser = (req, res, next) => {
+  // Get user data
+  req.userData = { id: req.query.userId, name: 'Sample User' };
+  next();
+};
+
+app.get('/user', [validateUser, getUser], (req, res) => {
+  res.json(req.userData);
+});
+```
+**Route Groups using Express Router:**
+For larger applications, you can organize routes using Express Router:
+```javascript
+// users.js
+const express = require('express');
+const router = express.Router();
+
+// All routes here are prefixed with /users
+router.get('/', (req, res) => {
+  res.send('Get all users');
+});
+
+router.get('/:id', (req, res) => {
+  res.send(`Get user with ID ${req.params.id}`);
+});
+
+router.post('/', (req, res) => {
+  res.send('Create new user');
+});
+
+module.exports = router;
+
+// app.js
+const usersRouter = require('./users');
+app.use('/users', usersRouter);
+```
+Routing is the foundation of creating RESTful APIs and web applications in Express, allowing you to organize your application's endpoints in a clean, modular fashion.
+
+## Solution 46
+*Reference: [Solution 46](node-questions.md#solution-46)*
+
+### Q. What are route parameters and query parameters in Express?
+
+Route parameters and query parameters are two important ways to pass data to an Express.js server, each serving different purposes in API and web application design.
+### Route Parameters
+Route parameters are named URL segments used to capture values at specific positions in the URL. They are defined by prefixing a colon to the parameter name in the route path.
+
+**Key characteristics:**
+- Part of the route path definition.
+- Essential for RESTful resource identification.
+- Accessed via `req.params` object.
+- Typically used for identifying specific resources.
+
+**Examples:**
+```javascript
+const express = require('express');
+const app = express();
+
+// Route with a single parameter
+app.get('/users/:userId', (req, res) => {
+  res.send(`Fetching user with ID: ${req.params.userId}`);
+});
+
+// Route with multiple parameters
+app.get('/users/:userId/posts/:postId', (req, res) => {
+  const { userId, postId } = req.params;
+  res.send(`Fetching post ${postId} by user ${userId}`);
+});
+
+// Optional parameters using ?
+app.get('/products/:category/:id?', (req, res) => {
+  const { category, id } = req.params;
+  if (id) {
+    res.send(`Fetching product ${id} in category ${category}`);
+  } else {
+    res.send(`Fetching all products in category ${category}`);
+  }
+});
+
+// Parameter with specific pattern (regex)
+app.get('/files/:filename(\\d+)', (req, res) => {
+  // Only matches if filename consists of digits
+  res.send(`Fetching file: ${req.params.filename}`);
+});
+```
+**Query Parameters**
+Query parameters are key-value pairs appended to the URL after a question mark, used for filtering, sorting, pagination, and other optional parameters.
+
+**Key characteristics:**
+- Appended to the URL after `?` with format `?key1=value1&key2=value2`.
+- Optional and don't affect route matching.
+- Accessed via `req.query` object.
+- Typically used for filtering, sorting, or optional configurations.
+
+**Examples:**
+```javascript
+// Route handling query parameters for filtering and pagination
+app.get('/products', (req, res) => {
+  const { category, minPrice, maxPrice, sort, page, limit } = req.query;
+  
+  let response = 'Fetching products';
+  
+  // Building response based on query parameters
+  if (category) {
+    response += ` in category: ${category}`;
+  }
+  
+  if (minPrice || maxPrice) {
+    response += ` with price range: ${minPrice || '0'} to ${maxPrice || 'unlimited'}`;
+  }
+  
+  if (sort) {
+    response += ` sorted by: ${sort}`;
+  }
+  
+  if (page && limit) {
+    response += ` (page ${page}, ${limit} items per page)`;
+  }
+  
+  res.send(response);
+});
+
+// Search functionality using query parameters
+app.get('/search', (req, res) => {
+  const { q, type } = req.query;
+  res.send(`Searching for "${q}" in category: ${type || 'all'}`);
+});
+```
+**Key Differences**
+
+1. **Position in URL**:
+  - Route parameters: Part of the URL path (`/users/123`)
+  - Query parameters: After the `?` in the URL (`/users?id=123`)
+2. **Requirement**:
+  - Route parameters: Usually required (unless made optional with `?`)
+  - Query parameters: Always optional
+3. **Use case**:
+  - Route parameters: Identifying specific resources (RESTful approach)
+  - Query parameters: Filtering, sorting, pagination, and optional configuration
+4. **Route matching**:
+  - Route parameters: Affect which route handler is matched
+  - Query parameters: Don't affect route matching
+
+
+## Solution 47
+*Reference: [Solution 47](node-questions.md#solution-47)*
+
+### Q. How do you handle static files in Express?
+
+Handling static files (like CSS, JavaScript, images) in Express is accomplished using the built-in express.static middleware. This middleware allows you to serve static files directly from specified directories without having to create individual routes for each file.
+
+**Basic Static File Serving**
+```javascript
+const express = require('express');
+const path = require('path');
+const app = express();
+
+// Serve static files from the 'public' directory
+app.use(express.static('public'));
+
+// Now files in the 'public' directory are accessible at the root URL
+// Example: If you have public/styles/main.css, it's accessible at http://localhost:3000/styles/main.css
+```
+**Advanced Static File Configuration**
+**1. Multiple Static Directories:**
+```javascript
+// Serve static files from multiple directories
+app.use(express.static('public'));
+app.use(express.static('assets'));
+app.use(express.static('uploads'));
+
+// Express looks for files in directories in the order they are defined
+// If a file isn't found in 'public', it looks in 'assets', then 'uploads'
+```
+**2. Virtual Path Prefix:**
+```javascript
+// Add a virtual path prefix to static files
+app.use('/static', express.static('public'));
+
+// Now a file at public/css/style.css is accessible at http://localhost:3000/static/css/style.css
+```
+**3. Absolute Paths (Recommended for Production):**
+```javascript
+// Use absolute paths to avoid confusion
+app.use(express.static(path.join(__dirname, 'public')));
+
+// With virtual path
+app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
+```
+**4. Static File Options:**
+```javascript
+app.use(express.static('public', {
+  dotfiles: 'ignore',     // Ignore dotfiles (default)
+  etag: true,             // Enable etag generation (default)
+  extensions: ['html'],   // Try these extensions if no extension in URL
+  index: 'index.html',    // Default file to serve for directories
+  lastModified: true,     // Set Last-Modified header (default)
+  maxAge: '1d',           // Cache control max age: 1 day (in milliseconds)
+  setHeaders: (res, path, stat) => {
+    // Custom header setting function
+    res.set('x-timestamp', Date.now());
+  }
+}));
+```
+
+**Complete Example with HTML Template**
+```javascript
+const express = require('express');
+const path = require('path');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Serve static files from 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Set up a virtual path for assets
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
+
+// Set up a special path for user uploads with longer cache time
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '1d'
+}));
+
+// Serve index.html for the root route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'index.html'));
+});
+
+// Error handler for static files
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).send('Error loading static resources');
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+```
+
+**Best Practices for Static Files**
+1. **Security considerations:**
+  - Never serve directories containing sensitive information
+  - Use helmet.js to set appropriate security headers
+  - Consider rate limiting for public assets
+2. **Performance optimization:**
+  - Set appropriate cache headers using the maxAge option
+  - Consider using a CDN for production applications
+  - Compress static files using middleware like compression
+3. **Organization:**
+  - Keep static files in separate directories based on type (css, js, images)
+  - Use virtual paths that make the resource type clear
+4. **Fallbacks:**
+  - For SPAs, configure your server to serve index.html for routes not found
+```javascript
+// For a Single Page Application, serve index.html for all non-file routes
+app.use(express.static('public'));
+
+// Handle any routes not matched by static files or API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+```
+
+## Solution 48
+*Reference: [Solution 48](node-questions.md#solution-48)*
+
+### Q. What is the purpose of app.use() in Express?
+
+`app.use()` is a method in Express.js that mounts middleware functions at a specified path. It's one of the most important methods in Express as it enables the core middleware functionality that makes Express so powerful and flexible.
+
+**Key purposes of app.use():**
+1. **Mounting middleware**: It adds middleware functions to the Express application's request-response cycle.
+```javascript
+// Example: Adding a simple logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
+```
+2. **Path-specific middleware**: When provided with a path parameter, the middleware only executes for requests matching that path.
+```javascript
+// This middleware only runs for requests to the /api path or its subpaths
+app.use('/api', (req, res, next) => {
+  console.log('API request received');
+  next();
+});
+```
+3. **Mounting routers**: It can be used to mount entire router instances at specific paths.
+```javascript
+const userRouter = express.Router();
+userRouter.get('/', userController.getAllUsers);
+userRouter.post('/', userController.createUser);
+
+// Mount the router at /users
+app.use('/users', userRouter);
+```
+4. **Serving static files**: It's used with the built-in `express.static` middleware to serve static assets.
+```javascript
+// Serve static files from the 'public' directory
+app.use(express.static('public'));
+```
+5. **Adding built-in or third-party middleware**: It integrates middleware like body parsers, cookie parsers, etc.
+```javascript
+// Parse JSON request bodies
+app.use(express.json());
+// Parse URL-encoded form data
+app.use(express.urlencoded({ extended: true }));
+```
+The power of app.use() lies in its flexibility and the way it enables the middleware architecture that makes Express so extensible.
+
+
+## Solution 49
+*Reference: [Solution 49](node-questions.md#solution-49)*
+
+### Q. How do you implement error handling middleware in Express?
+
+Error handling middleware in Express is a special type of middleware function that takes four parameters instead of three: (err, req, res, next). Express recognizes this pattern by the presence of four arguments and treats it as error-handling middleware.
+**Implementing error handling middleware:**
+```javascript
+// Basic error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+```
+**A more comprehensive error handling implementation:**
+```javascript
+// Define custom error types
+class ValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ValidationError';
+    this.statusCode = 400;
+  }
+}
+
+class NotFoundError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'NotFoundError';
+    this.statusCode = 404;
+  }
+}
+
+// Normal route that might throw an error
+app.get('/users/:id', (req, res, next) => {
+  const id = req.params.id;
+  
+  // Validation check
+  if (!id.match(/^\d+$/)) {
+    return next(new ValidationError('User ID must be numeric'));
+  }
+  
+  // Resource not found
+  if (id === '999') {
+    return next(new NotFoundError('User not found'));
+  }
+  
+  // Unexpected error
+  if (id === '500') {
+    throw new Error('Internal server error example');
+  }
+  
+  res.send(`User ${id} details`);
+});
+
+// Handle 404 errors for routes not found
+app.use((req, res, next) => {
+  next(new NotFoundError('Resource not found'));
+});
+
+// Comprehensive error handler
+app.use((err, req, res, next) => {
+  // Log the error for debugging
+  console.error(`${new Date().toISOString()} - Error:`, {
+    name: err.name,
+    message: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+  
+  // Set appropriate status code
+  const statusCode = err.statusCode || 500;
+  
+  // Prepare error response
+  const errorResponse = {
+    error: {
+      name: err.name,
+      message: err.message,
+      // Only include stack trace in development
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    },
+    // Add request ID for tracking if available
+    requestId: req.id
+  };
+  
+  // Send error response
+  res.status(statusCode).json(errorResponse);
+});
+```
+**Key best practices for error handling in Express:**
+1. **Error handling middleware should be defined last**, after all other middleware and routes.
+2. **Use try/catch in async route handlers** or use a wrapper like `express-async-errors`.
+3. **Differentiate between operational errors and programming errors** - handle operational errors gracefully, but let programming errors crash the process.
+4. **Use custom error classes** to standardize error handling across your application.
+5. **Always log errors** for debugging purposes.
+
+## Solution 50
+*Reference: [Solution 50](node-questions.md#solution-50)*
+
+### Q. Explain how to use template engines like EJS or Pug with Express.
+
+Template engines allow you to generate HTML dynamically by embedding server-side code directly into your templates. Express.js makes it easy to integrate with various template engines like EJS, Pug (formerly Jade), Handlebars, and more.
+
+**Setting up a template engine with Express:**
+1. **Install the template engine:**
+```bash
+# For EJS
+npm install ejs
+
+# For Pug
+npm install pug
+```
+2. **Configure the template engine in your Express app:**
+```javascript
+const express = require('express');
+const app = express();
+const path = require('path');
+
+// Set the view engine (EJS or Pug)
+app.set('view engine', 'ejs'); // or 'pug'
+
+// Set the directory where your template files are located
+app.set('views', path.join(__dirname, 'views'));
+```
+3. **Create template files:**
+For EJS (views/index.ejs):
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= title %></title>
+</head>
+<body>
+  <h1><%= heading %></h1>
+  <ul>
+    <% users.forEach(function(user) { %>
+      <li><%= user.name %> - <%= user.email %></li>
+    <% }); %>
+  </ul>
+</body>
+</html>
+```
+For Pug (views/index.pug):
+```pug
+doctype html
+html
+  head
+    title= title
+  body
+    h1= heading
+    ul
+      each user in users
+        li #{user.name} - #{user.email}
+```
+4. **Render templates in your routes:**
+```javascript
+app.get('/', (req, res) => {
+  // Render the template with data
+  res.render('index', {
+    title: 'User List',
+    heading: 'Our Users',
+    users: [
+      { name: 'John Doe', email: 'john@example.com' },
+      { name: 'Jane Smith', email: 'jane@example.com' }
+    ]
+  });
+});
+```
+**Template engine features:**
+5. **Layouts and partials** - Most template engines support layout templates and partial views for code reuse.
+For EJS partials:
+```html
+<!-- views/partials/header.ejs -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= title %></title>
+</head>
+<body>
+  <header>
+    <nav><!-- Navigation items --></nav>
+  </header>
+
+<!-- In your main template -->
+<%- include('partials/header') %>
+<main>
+  <!-- Page content -->
+</main>
+<%- include('partials/footer') %>
+```
+For Pug layouts:
+```pug
+// views/layout.pug
+doctype html
+html
+  head
+    title= title
+    block styles
+  body
+    include partials/header
+    block content
+    include partials/footer
+
+// views/home.pug
+extends layout
+
+block styles
+  link(rel='stylesheet', href='/css/home.css')
+
+block content
+  h1 Welcome to our site
+  p This is the home page
+```
+
+6. **Conditional rendering and loops:**
+```javascript
+// EJS conditionals
+<% if (user.isAdmin) { %>
+  <div class="admin-panel"><!-- Admin content --></div>
+<% } else { %>
+  <div class="user-panel"><!-- User content --></div>
+<% } %>
+
+// Pug conditionals
+if user.isAdmin
+  .admin-panel
+    //- Admin content
+else
+  .user-panel
+    //- User content
+```
+**Performance considerations:**
+Template engines add some processing overhead, so for high-performance applications, consider:
+2. Template caching (enabled by default in production)
+3. Precompiling templates during build
+4. For API-only applications, consider not using template engines at all
+
+
+# Asynchronous Programming
+
+## Solution 51
+*Reference: [Solution 51](node-questions.md#solution-51)*
+
+### Q. How do callbacks work in Node.js, and what is callback hell?
+
+***Callbacks in Node.js***
+In Node.js, callbacks are functions passed as arguments to other functions that will be executed later when an operation completes. Node.js uses an event-driven, non-blocking I/O model, and callbacks are fundamental to this architecture.
+```javascript
+// Example of a Node.js callback
+const fs = require('fs');
+
+fs.readFile('/path/to/file.txt', 'utf8', (err, data) => {
+  if (err) {
+    console.error('Error reading file:', err);
+    return;
+  }
+  console.log('File content:', data);
+});
+
+console.log('This runs before file content is displayed');
+```
+Node.js callbacks typically follow the "error-first callback" pattern, where:
+- The first parameter is reserved for an error object
+- If the operation was successful, the first parameter will be null or undefined
+- Subsequent parameters contain the operation's result(s)
+
+**Callback Hell**
+Callback hell (also known as "pyramid of doom") refers to the situation where callbacks are nested within callbacks, creating deeply indented code that becomes difficult to read, maintain, and debug.
+```javascript
+// Callback hell example
+fs.readFile('config.json', 'utf8', (err, configData) => {
+  if (err) return console.error('Error reading config:', err);
+  
+  const config = JSON.parse(configData);
+  fs.readFile(config.userDataFile, 'utf8', (err, userData) => {
+    if (err) return console.error('Error reading user data:', err);
+    
+    const user = JSON.parse(userData);
+    fs.readFile(user.profilePicture, (err, imageData) => {
+      if (err) return console.error('Error reading profile picture:', err);
+      
+      processImageData(imageData, (err, processedImage) => {
+        if (err) return console.error('Error processing image:', err);
+        
+        saveProcessedImage(processedImage, (err, savedImage) => {
+          if (err) return console.error('Error saving image:', err);
+          
+          console.log('Everything completed successfully!');
+        });
+      });
+    });
+  });
+});
+```
+This example demonstrates how callback-based code quickly becomes unwieldy as complexity increases. Each level of nesting makes the code harder to understand and introduces potential for errors in error handling logic.
+
+### Solutions to Callback Hell
+1. **Modularize code**: Break nested callbacks into named functions
+2. **Use Promises**: Convert callback-based APIs to Promise-based
+3. **Use async/await**: Further simplify Promise-based code
+4. **Use control flow libraries**: Like the async module
+
+## Solution 52
+*Reference: [Solution 52](node-questions.md#solution-52)*
+
+### Q. What are Promises in Node.js, and how do they help with async code?
+
+Promises are objects representing the eventual completion or failure of an asynchronous operation. They provide a cleaner alternative to callbacks for handling asynchronous operations.
+
+**Promise States**
+A Promise can be in one of three states:
+- **Pending**: Initial state, neither fulfilled nor rejected
+- **Fulfilled**: The operation completed successfully
+- **Rejected**: The operation failed
+```javascript
+// Creating a Promise
+const myPromise = new Promise((resolve, reject) => {
+  // Asynchronous operation
+  const success = true;
+  if (success) {
+    resolve('Operation succeeded');  // fulfilled state
+  } else {
+    reject(new Error('Operation failed'));  // rejected state
+  }
+});
+
+// Consuming a Promise
+myPromise
+  .then(result => {
+    console.log(result);  // 'Operation succeeded'
+  })
+  .catch(error => {
+    console.error(error);
+  });
+```
+**How Promises Help with Async Code**
+1. **Chainable operations**: Promises can be chained using `.then()`, making sequential async operations cleaner
+2. **Centralized error handling**: Using `.catch()` for all errors in a chain
+3. **Avoiding deeply nested code**: Flattening the "pyramid of doom"
+4. **Composition**: Combining promises with methods like `Promise.all()` and `Promise.race()`
+Example of Promise chaining vs callback hell:
+```javascript
+// Using Promises to avoid callback hell
+fs.promises.readFile('config.json', 'utf8')
+  .then(configData => {
+    const config = JSON.parse(configData);
+    return fs.promises.readFile(config.userDataFile, 'utf8');
+  })
+  .then(userData => {
+    const user = JSON.parse(userData);
+    return fs.promises.readFile(user.profilePicture);
+  })
+  .then(imageData => {
+    return processImageData(imageData);
+  })
+  .then(processedImage => {
+    return saveProcessedImage(processedImage);
+  })
+  .then(() => {
+    console.log('Everything completed successfully!');
+  })
+  .catch(err => {
+    console.error('An error occurred:', err);
+  });
+```
+**Promise Composition**
+```javascript
+// Promise.all - wait for all promises to resolve
+const promise1 = fetchUserProfile();
+const promise2 = fetchUserPosts();
+const promise3 = fetchUserFriends();
+
+Promise.all([promise1, promise2, promise3])
+  .then(([profile, posts, friends]) => {
+    // All data is available here
+    console.log(profile, posts, friends);
+  })
+  .catch(error => {
+    // If any promise rejects, this will execute
+    console.error(error);
+  });
+
+// Promise.race - get result of first resolved promise
+const cachePromise = checkCache('user-123');
+const dbPromise = queryDatabase('user-123');
+
+Promise.race([cachePromise, dbPromise])
+  .then(userData => {
+    // First result (either from cache or DB)
+    displayUserData(userData);
+  });
+```
+
+## Solution 53
+*Reference: [Solution 53](node-questions.md#solution-53)*
+
+### Q. Explain async/await in Node.js with an example.
+
+sync/await is a syntactic feature introduced in Node.js 7.6+ (based on ES2017) that makes asynchronous code look and behave more like synchronous code. It's built on top of Promises and makes async code even more readable and maintainable.
+
+**Key Concepts**
+- **async function**: A function declared with the `async` keyword, which returns a Promise implicitly.
+- **await operator**: Used inside async functions to wait for a Promise to settle before continuing execution.
+
+```javascript
+// Basic async/await example
+async function getUserData() {
+  try {
+    // await pauses execution until the promise resolves
+    const response = await fetch('https://api.example.com/users/1');
+    
+    // This line only executes after the fetch completes
+    const userData = await response.json();
+    
+    return userData;  // Automatically wrapped in a Promise
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    throw error;  // Re-throwing maintains the Promise rejection chain
+  }
+}
+
+// Using the async function
+getUserData()
+  .then(data => console.log(data))
+  .catch(err => console.error(err));
+
+// Or with another async function
+async function displayUserInfo() {
+  try {
+    const userData = await getUserData();
+    console.log(`User: ${userData.name}`);
+  } catch (error) {
+    console.error('Failed to display user info:', error);
+  }
+}
+```
+
+## Solution 54
+*Reference: [Solution 54](node-questions.md#solution-54)*
+
+### Q. How do you promisify a callback-based function?
+
+Promisification is the process of converting callback-based functions to return Promises. This allows you to use modern async/await syntax with older callback-based APIs.
+
+**Manual Promisification**
+```javascript
+// Original callback-based function
+function readFileCallback(path, options, callback) {
+  fs.readFile(path, options, callback);
+}
+
+// Manual promisification
+function readFilePromise(path, options) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path, options, (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+}
+
+// Usage
+readFilePromise('config.json', 'utf8')
+  .then(data => console.log(data))
+  .catch(err => console.error(err));
+```
+**Using util.promisify (Node.js built-in)**
+Node.js provides a built-in utility for promisification:
+```javascript
+const util = require('util');
+const fs = require('fs');
+
+// Convert the callback-based function to return a promise
+const readFile = util.promisify(fs.readFile);
+
+// Now use it with async/await
+async function readConfig() {
+  try {
+    const data = await readFile('config.json', 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error reading config:', error);
+    throw error;
+  }
+}
+```
+**Creating a Generic Promisify Function**
+If you need to support older Node.js versions without `util.promisify`.
+```javascript
+function promisify(fn) {
+  return function(...args) {
+    return new Promise((resolve, reject) => {
+      fn(...args, (err, result) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
+        }
+      });
+    });
+  };
+}
+
+// Usage
+const readFile = promisify(fs.readFile);
+```
+**Promisifying Methods with Context**
+When promisifying methods that need to preserve this context
+```javascript
+function promisifyMethod(obj, methodName) {
+  const originalMethod = obj[methodName];
+  
+  obj[methodName + 'Async'] = function(...args) {
+    return new Promise((resolve, reject) => {
+      originalMethod.call(this, ...args, (err, result) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
+        }
+      });
+    });
+  };
+}
+
+// Example with a database client
+promisifyMethod(dbClient, 'query');
+// Now you can use dbClient.queryAsync()
+```
+
+## Solution 55
+*Reference: [Solution 55](node-questions.md#solution-55)*
+
+### Q. What is the async module, and when might you use it?
+
+The async module is a utility library that provides powerful functions for working with asynchronous JavaScript. While modern JavaScript features (Promises, async/await) have reduced the need for this module, it still offers valuable tools for managing complex asynchronous workflows.
+
+**Key Features of the async Module**
+1. **Flow control**: Managing the execution of asynchronous operations
+2. **Collections**: Processing collections of items in parallel or series
+3. **Utilities**: Helper functions for common async patterns
+
+**Installation**
+```bash
+npm install async
+```
+**Common Use Cases and Examples**
+**Series Execution (waterfall)**
+Execute functions in sequence, passing results to the next function:
+```javascript
+const async = require('async');
+
+async.waterfall([
+  function(callback) {
+    fetchUserData(userId, callback);
+  },
+  function(userData, callback) {
+    fetchUserPosts(userData.postIds, callback);
+  },
+  function(posts, callback) {
+    processPostData(posts, callback);
+  }
+], function(err, result) {
+  if (err) {
+    console.error('Error in waterfall:', err);
+    return;
+  }
+  console.log('Final result:', result);
+});
+```
+**Parallel Execution**
+Execute functions in parallel and collect all results:
+```javascript
+async.parallel({
+  profile: function(callback) {
+    fetchUserProfile(userId, callback);
+  },
+  posts: function(callback) {
+    fetchUserPosts(userId, callback);
+  },
+  friends: function(callback) {
+    fetchUserFriends(userId, callback);
+  }
+}, function(err, results) {
+  if (err) {
+    console.error('Error in parallel execution:', err);
+    return;
+  }
+  // results contains {profile: ..., posts: ..., friends: ...}
+  displayDashboard(results);
+});
+```
+**Processing Collections**
+Process array items with controlled concurrency:
+```javascript
+// Process up to 5 items at once
+async.mapLimit(largeArrayOfUrls, 5, function(url, callback) {
+  fetchData(url, callback);
+}, function(err, results) {
+  if (err) {
+    console.error('Error in mapLimit:', err);
+    return;
+  }
+  console.log('All URLs processed:', results);
+});
+```
+**Retry with Backoff**
+Retry an operation with exponential backoff:
+```javascript
+async.retry({
+  times: 5,
+  interval: function(retryCount) {
+    return 1000 * Math.pow(2, retryCount); // Exponential backoff
+  }
+}, function(callback) {
+  // Operation that might fail
+  unstableApiCall(data, callback);
+}, function(err, result) {
+  if (err) {
+    console.error('Operation failed after multiple retries:', err);
+    return;
+  }
+  console.log('Operation succeeded:', result);
+});
+```
+**When to Use the async Module**
+1. **Complex control flows**: Managing intricate sequences of async operations
+2. **Throttling and concurrency control**: When you need to limit parallel operations
+3. **Legacy codebases**: Working with callback-based code that hasn't been promisified
+4. **Specialized patterns**: For retry logic, queuing, and other patterns not easily handled with Promises alone
+
+**Modern Alternatives
+For new projects, consid**er these alternatives:
+- Native Promises with `Promise.all`, `Promise.race`, etc.
+- Async/await with try/catch blocks
+- Libraries like Bluebird for advanced Promise patterns

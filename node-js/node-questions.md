@@ -137,3 +137,46 @@ What is middleware in the context of Node.js servers?
 
 ## Question 42
 How do you parse query parameters and body data in HTTP requests?
+
+# Express.js
+
+## Question 43
+What is Express.js, and why is it commonly used with Node.js?
+
+## Question 44
+How do you set up a basic Express server?
+
+## Question 45
+Explain routing in Express with examples.
+
+## Question 46
+What are route parameters and query parameters in Express?
+
+## Question 47
+How do you handle static files in Express?
+
+## Question 48
+What is the purpose of app.use() in Express?
+
+## Question 49
+How do you implement error handling middleware in Express?
+
+## Question 50
+Explain how to use template engines like EJS or Pug with Express.
+
+# Asynchronous Programming
+
+## Question 51
+How do callbacks work in Node.js, and what is callback hell?
+
+## Question 52
+What are Promises in Node.js, and how do they help with async code?
+
+## Question 53
+Explain async/await in Node.js with an example.
+
+## Question 54
+How do you promisify a callback-based function?
+
+## Question 55
+What is the async module, and when might you use it?

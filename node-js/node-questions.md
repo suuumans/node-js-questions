@@ -180,3 +180,40 @@ How do you promisify a callback-based function?
 
 ## Question 55
 What is the async module, and when might you use it?
+
+# Databases
+
+## Question 56
+How do you connect to a MongoDB database using Mongoose in Node.js?
+
+## Question 57
+What is the difference between MongoDB and SQL databases in a Node.js context?
+
+## Question 58
+Explain how to perform CRUD operations with MongoDB in Node.js.
+
+## Question 59
+How do you use the mysql or pg module to connect to a SQL database?
+
+## Question 60
+What are ORMs like Sequelize, and how do they simplify database interactions?
+
+# Authentication and Security
+
+## Question 61
+How do you implement JWT authentication in a Node.js application?
+
+## Question 62
+What is bcrypt, and how is it used for password hashing?
+
+## Question 63
+Explain CORS and how to handle it in a Node.js server.
+
+## Question 64
+What are common security vulnerabilities in Node.js apps (e.g., XSS, CSRF) and how to mitigate them?
+
+## Question 65
+How do you use environment variables for secure configuration in Node.js?
+
+# Question 66
+What is helmet middleware, and what does it do?

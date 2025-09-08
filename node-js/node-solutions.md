@@ -3811,8 +3811,959 @@ async.retry({
 3. **Legacy codebases**: Working with callback-based code that hasn't been promisified
 4. **Specialized patterns**: For retry logic, queuing, and other patterns not easily handled with Promises alone
 
-**Modern Alternatives
+**Modern Alternatives**
 For new projects, consid**er these alternatives:
 - Native Promises with `Promise.all`, `Promise.race`, etc.
 - Async/await with try/catch blocks
 - Libraries like Bluebird for advanced Promise patterns
+
+# Databases
+
+## Solution 56
+*Reference: [Solution 56](node-questions.md#solution-56)*
+
+### Q. How do you connect to a MongoDB database using Mongoose in Node.js?
+
+Mongoose is an Object Data Modeling (ODM) library for MongoDB and Node.js that provides a schema-based solution to model your application data. Here's how to connect to a MongoDB database using Mongoose.
+
+**Installation**
+```bash
+npm install mongoose
+```
+```javascript
+const mongoose = require('mongoose');
+
+// Connection URI (with authentication if needed)
+const uri = 'mongodb://username:password@localhost:27017/mydatabase';
+
+// Connect to MongoDB
+mongoose.connect(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+  .then(() => {
+    console.log('Successfully connected to MongoDB');
+  })
+  .catch(err => {
+    console.error('Connection error:', err);
+  });
+
+// Define a schema
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, required: true, unique: true },
+  age: Number,
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Create a model from the schema
+const User = mongoose.model('User', userSchema);
+
+// Now you can use the User model to interact with the 'users' collection
+```
+In a production environment, I would typically:
+1. Store connection strings in environment variables.
+2. Implement connection retry logic.
+3. Handle connection events (connected, error, disconnected).
+4. Set up separate connections for different components if needed.
+
+## Solution 57
+*Reference: [Solution 57](node-questions.md#solution-57)*
+
+### Q. What is the difference between MongoDB and SQL databases in a Node.js context?
+
+When working with Node.js, MongoDB and SQL databases (like MySQL or PostgreSQL) offer different approaches to data management:
+
+**MongoDB (NoSQL)**:
+- **Document-oriented**: Stores data in flexible, JSON-like BSON documents
+- **Schema flexibility**: No rigid schema requirements, fields can vary between documents
+- **Native JavaScript integration**: Uses JSON-like format that aligns well with JavaScript objects
+- **Horizontal scalability**: Designed for easy sharding and distribution
+- **Node.js integration**: Native drivers and ODMs like Mongoose provide seamless integration
+- **Query language**: Uses a JavaScript-like query syntax
+- **Best for**: Rapidly evolving schemas, hierarchical data, applications where flexibility is more important than complex transactions
+**SQL Databases**:
+- **Table-oriented**: Data stored in tables with rows and columns
+- **Strict schema**: Predefined schema with typed columns
+- **ACID compliance**: Strong transaction support
+- **Relational data**: Strong support for joins and complex relationships
+- **Node.js integration**: Modules like `mysql`, `pg` (PostgreSQL), or ORMs like Sequelize
+- **Query language**: Uses SQL (Structured Query Language)
+- **Best for**: Complex relationships, applications requiring data integrity and complex transactions
+**In Node.js context specifically**:
+- MongoDB operations feel more "JavaScript native" due to its JSON-like document model
+- SQL databases require more transformation between JavaScript objects and tabular data
+- Both have robust ecosystems in Node.js with mature drivers and ORMs
+- MongoDB's asynchronous operations align well with Node.js's event-driven architecture
+- For SQL databases, connection pooling becomes more important in Node.js due to its single-threaded nature
+
+## Solution 58
+*Reference: [Solution 58](node-questions.md#solution-58)*
+
+### Q. How do you perform CRUD operations with MongoDB in Node.js?
+
+You can perform CRUD (Create, Read, Update, Delete) operations with MongoDB in Node.js using either the native MongoDB driver or Mongoose. Here's how to do it with Mongoose.
+
+**Example (User Model CRUD)**:
+```javascript
+const mongoose = require('mongoose');
+const UserSchema = new mongoose.Schema({ name: String, email: String });
+const User = mongoose.model('User', UserSchema);
+
+// Create
+async function createUser() {
+  const user = await User.create({ name: 'Alice', email: 'alice@example.com' });
+  console.log('Created:', user);
+}
+
+// Read
+async function readUsers() {
+  const users = await User.find({ name: 'Alice' }).lean(); // Plain JS objects for perf
+  console.log('Found:', users);
+}
+
+// Update
+async function updateUser(id) {
+  const updated = await User.findByIdAndUpdate(id, { email: 'new@example.com' }, { new: true });
+  console.log('Updated:', updated);
+}
+
+// Delete
+async function deleteUser(id) {
+  await User.findByIdAndDelete(id);
+  console.log('Deleted');
+}
+```
+
+## Solution 59
+*Reference: [Solution 59](node-questions.md#solution-59)*
+
+### Q. How do you use the mysql or pg module to connect to a SQL database?
+
+Let's look at how to connect to both MySQL and PostgreSQL databases in Node.js using the `mysql` and `pg` modules, respectively.
+
+**MySQL Connection (using mysql2 module)**:
+```javascript
+const mysql = require('mysql2/promise'); // Using promise-based version
+
+// Create a connection pool
+const pool = mysql.createPool({
+  host: 'localhost',
+  user: 'dbuser',
+  password: 'dbpassword',
+  database: 'myapp',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
+
+async function getUsers() {
+  try {
+    // Get a connection from the pool
+    const [rows, fields] = await pool.execute(
+      'SELECT * FROM users WHERE active = ? ORDER BY created_at DESC LIMIT ?', 
+      [true, 10]
+    );
+    
+    console.log(`Found ${rows.length} users`);
+    return rows;
+  } catch (error) {
+    console.error('Database error:', error);
+    throw error;
+  }
+}
+
+async function createUser(user) {
+  try {
+    const [result] = await pool.execute(
+      'INSERT INTO users (name, email, age) VALUES (?, ?, ?)',
+      [user.name, user.email, user.age]
+    );
+    
+    console.log(`User created with ID: ${result.insertId}`);
+    return result.insertId;
+  } catch (error) {
+    console.error('Error creating user:', error);
+    throw error;
+  }
+}
+
+// Using pool in an Express application
+// app.get('/users', async (req, res) => {
+//   try {
+//     const users = await getUsers();
+//     res.json(users);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Database error' });
+//   }
+// });
+```
+**PostgreSQL Connection (using pg module)**:
+```javascript
+const { Pool } = require('pg');
+
+// Create a connection pool
+const pool = new Pool({
+  user: 'dbuser',
+  host: 'localhost',
+  database: 'myapp',
+  password: 'dbpassword',
+  port: 5432,
+  max: 20, // Maximum number of clients in the pool
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000
+});
+
+// Handle pool errors
+pool.on('error', (err, client) => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
+});
+
+async function getProducts(minPrice) {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'SELECT * FROM products WHERE price >= $1 ORDER BY price ASC',
+      [minPrice]
+    );
+    
+    console.log(`Found ${result.rows.length} products`);
+    return result.rows;
+  } catch (error) {
+    console.error('Error querying products:', error);
+    throw error;
+  } finally {
+    client.release(); // Always release the client back to the pool
+  }
+}
+
+async function updateProductPrice(productId, newPrice) {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'UPDATE products SET price = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+      [newPrice, productId]
+    );
+    
+    if (result.rows.length === 0) {
+      throw new Error('Product not found');
+    }
+    
+    console.log('Updated product:', result.rows[0]);
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error updating product:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+// Transaction example
+async function transferFunds(fromAccountId, toAccountId, amount) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    // Deduct from source account
+    await client.query(
+      'UPDATE accounts SET balance = balance - $1 WHERE id = $2',
+      [amount, fromAccountId]
+    );
+    
+    // Add to destination account
+    await client.query(
+      'UPDATE accounts SET balance = balance + $1 WHERE id = $2',
+      [amount, toAccountId]
+    );
+    
+    await client.query('COMMIT');
+    console.log(`Transferred $${amount} from account ${fromAccountId} to ${toAccountId}`);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Transaction error:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+```
+Best practices for SQL database connections in Node.js:
+1. **Use connection pooling**: This manages a pool of connections to improve performance
+2. **Parameterized queries**: Always use parameterized queries to prevent SQL injection
+3. **Proper error handling**: Catch and handle database errors appropriately
+4. **Resource cleanup**: Always release connections back to the pool
+5. **Transactions**: Use transactions for operations that need to be atomic
+
+## Solution 60
+*Reference: [Solution 60](node-questions.md#solution-60)*
+
+### Q. What are ORMs like Sequelize, and how do they simplify database interactions?
+
+Object-Relational Mapping (ORM) libraries like Sequelize provide an abstraction layer between your application and the database, allowing you to interact with the database using JavaScript objects instead of SQL queries.
+
+**What is Sequelize?**
+Sequelize is a promise-based Node.js ORM for PostgreSQL, MySQL, MariaDB, SQLite, and Microsoft SQL Server. It provides robust transaction support, relations, eager and lazy loading, read replication, and more.
+
+**How ORMs simplify database interactions:**
+1. **Model definition and validation**: Define data models with schemas, types, and validations in JavaScript
+```javascript
+const { Sequelize, DataTypes } = require('sequelize');
+const sequelize = new Sequelize('database', 'username', 'password', {
+  host: 'localhost',
+  dialect: 'mysql'
+});
+   
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true
+  },
+  username: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: {
+      len: [3, 30]
+    }
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true
+    }
+  },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  }
+});
+```
+2. **Database operations without SQL**: Perform CRUD operations with JavaScript methods
+```javascript
+// Create
+const createUser = async (userData) => {
+  try {
+    const user = await User.create(userData);
+    return user;
+  } catch (error) {
+    console.error('Error creating user:', error);
+    throw error;
+  }
+};
+   
+// Read
+const findUsers = async (criteria) => {
+  try {
+    const users = await User.findAll({
+      where: criteria,
+      order: [['createdAt', 'DESC']]
+    });
+    return users;
+  } catch (error) {
+    console.error('Error finding users:', error);
+    throw error;
+  }
+};
+   
+// Update
+const updateUser = async (userId, updates) => {
+  try {
+    const [updatedRowsCount, updatedUsers] = await User.update(updates, {
+      where: { id: userId },
+      returning: true
+    });
+    return updatedUsers[0];
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw error;
+  }
+};
+   
+// Delete
+const deleteUser = async (userId) => {
+  try {
+    const deletedRowsCount = await User.destroy({
+      where: { id: userId }
+    });
+    return deletedRowsCount > 0;
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    throw error;
+  }
+};
+```
+3. **Relationships**: Define and manage relationships between models
+```javascript
+const Post = sequelize.define('Post', {
+  title: DataTypes.STRING,
+  content: DataTypes.TEXT
+});
+   
+// Define relationships
+User.hasMany(Post);
+Post.belongsTo(User);
+   
+// Eager loading (JOIN)
+const getUserWithPosts = async (userId) => {
+  const user = await User.findByPk(userId, {
+    include: Post
+  });
+  return user;
+};
+```
+4. **Migrations**: Manage database schema changes with version control
+```javascript
+// migrations/20250901000000-create-users.js
+module.exports = {
+  up: async (queryInterface, Sequelize) => {
+    await queryInterface.createTable('Users', {
+      id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: Sequelize.INTEGER
+      },
+      username: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        unique: true
+      },
+      // other fields...
+      createdAt: {
+        allowNull: false,
+        type: Sequelize.DATE
+      },
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE
+      }
+    });
+  },
+  down: async (queryInterface) => {
+    await queryInterface.dropTable('Users');
+  }
+};
+```
+5. **Database agnostic code**: Switch database systems with minimal code changes
+
+**Benefits of using ORMs like Sequelize:**
+- **Reduced boilerplate**: Less repetitive SQL code
+- **Type safety**: JavaScript types mapped to database types
+- **Security**: Automatic SQL injection protection
+- **Validation**: Built-in data validation
+- **Abstraction**: Database operations using familiar JavaScript patterns
+- **Migrations**: Structured approach to database schema evolution
+- **Transactions**: Simplified transaction management
+- **Testing**: Easier to mock for unit tests
+**Potential drawbacks:**
+- **Performance overhead**: Can be slower than raw SQL for complex queries
+- **Learning curve**: Requires learning the ORM's API
+- **Limited flexibility**: Some complex SQL operations might be difficult to express
+- **Abstraction leakage**: ORM abstractions sometimes "leak," requiring SQL knowledge anyway
+
+
+# Authentication and Security
+
+## Solution 61
+*Reference: [Solution 61](node-questions.md#solution-61)*
+
+### Q. How do you implement JWT authentication in a Node.js application?
+
+JSON Web Tokens (JWT) provide a stateless authentication mechanism for securing APIs. Here's how to implement JWT authentication in a Node.js application.
+
+**Installation**:
+```bash
+npm install jsonwebtoken
+```
+
+**Create a JWT token:**
+```javascript
+const express = require('express');
+const jwt = require('jsonwebtoken');
+const app = express();
+app.use(express.json());
+
+// Secret key for signing tokens (in production, use environment variables)
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+// Login route - generate a token
+app.post('/login', (req, res) => {
+  // Authenticate user (simplified example)
+  const { username, password } = req.body;
+  
+  // In a real application, verify credentials against database
+  if (username === 'admin' && password === 'password') {
+    // Create payload with user information
+    const payload = {
+      user: {
+        id: 1,
+        username: username,
+        role: 'admin'
+      }
+    };
+    
+    // Sign the token with a secret key and expiration
+    jwt.sign(
+      payload,
+      JWT_SECRET,
+      { expiresIn: '1h' }, // Token expires in 1 hour
+      (err, token) => {
+        if (err) throw err;
+        res.json({ token });
+      }
+    );
+  } else {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+});
+
+// Authentication middleware
+const authenticateToken = (req, res, next) => {
+  // Get token from header
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Access denied, token missing' });
+  }
+  
+  try {
+    // Verify token
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded.user;
+    next();
+  } catch (err) {
+    return res.status(403).json({ error: 'Invalid token' });
+  }
+};
+
+// Protected route example
+app.get('/api/protected', authenticateToken, (req, res) => {
+  res.json({ 
+    message: 'Protected data', 
+    user: req.user 
+  });
+});
+
+app.listen(3000, () => console.log('Server running on port 3000'));
+```
+Best practices for JWT implementation:
+1. **Store sensitive data securely**: Never store secrets or passwords in the JWT payload
+2. **Set appropriate expiration**: Short-lived tokens increase security
+3. **Use HTTPS**: Always transmit tokens over encrypted connections
+4. **Implement token refresh**: Use refresh tokens for obtaining new access tokens
+5. **Handle token revocation**: Consider using a blacklist for revoked tokens
+6. **Protect against XSS**: Store tokens in HttpOnly cookies or secure storage
+7. **Validate all inputs**: Prevent injection attacks in authentication flows
+
+## Solution 62
+*Reference: [Solution 62](node-questions.md#solution-62)*
+
+### Q. What is bcrypt, and how is it used for password hashing?
+
+Bcrypt is a password-hashing function designed to securely hash passwords even as computing power increases. It incorporates a salt to protect against rainbow table attacks and is deliberately slow to prevent brute-force attacks.
+
+**Installation**:
+```bash
+npm install bcrypt
+```
+Here's how to implement password hashing with bcrypt in Node.js
+```javascript
+const bcrypt = require('bcrypt');
+const express = require('express');
+const app = express();
+app.use(express.json());
+
+// User registration example
+app.post('/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    // Generate a salt
+    // Higher saltRounds means more secure but slower hashing
+    const saltRounds = 10;
+    
+    // Hash the password with the salt
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    
+    // In a real app, save the username and hashedPassword to a database
+    // db.saveUser({ username, password: hashedPassword });
+    
+    res.status(201).json({ message: 'User registered successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// User login example
+app.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    // In a real app, retrieve the stored hash from a database
+    // const user = await db.findUserByUsername(username);
+    const user = { 
+      username: 'test', 
+      password: '$2b$10$zZB2yG5mCNJ9tPvxVGF.6.f4Gh9WgEBX8D5gSPo/9vXQCdSYfkdcW' // Hashed 'password123'
+    };
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    // Compare the provided password with the stored hash
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    
+    if (passwordMatch) {
+      // Passwords match - user authenticated
+      // In a real app, you would generate a JWT or session here
+      res.json({ message: 'Login successful' });
+    } else {
+      // Passwords don't match
+      res.status(401).json({ error: 'Invalid credentials' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.listen(3000, () => console.log('Server running on port 3000'));
+```
+Key bcrypt features:
+1. **Automatic salt generation**: Each hash includes a unique salt
+2. **Adjustable work factor**: The `saltRounds` parameter lets you balance security vs. performance
+3. **Future-proof**: As hardware gets faster, you can increase work factor
+4. **One-way function**: Original passwords cannot be recovered from hashes
+
+## Solution 63
+*Reference: [Solution 63](node-questions.md#solution-63)*
+
+### Q. Explain CORS and how to handle it in a Node.js server.
+
+Cross-Origin Resource Sharing (CORS) is a security mechanism implemented by browsers that restricts web pages from making requests to a domain different from the one that served the original page. This prevents malicious sites from making unauthorized requests on behalf of a user.
+According to the long-term memory from August 31, 2025, CORS issues arise when:
+- A frontend JavaScript application (like using Fetch API) attempts to request resources from a different origin
+- The browser enforces this security policy by default
+- The server must explicitly allow cross-origin requests
+
+Here's how to handle CORS in a Node.js/Express server:
+```javascript
+const express = require('express');
+const cors = require('cors');
+const app = express();
+
+// Option 1: Enable CORS for all routes with default settings
+app.use(cors());
+
+// Option 2: Configure CORS with specific options
+app.use(cors({
+  origin: 'https://your-allowed-origin.com', // Specific domain (can be array of domains)
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Allowed HTTP methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+  exposedHeaders: ['Content-Range', 'X-Content-Range'], // Headers accessible to the browser
+  credentials: true, // Allow cookies to be sent with requests
+  maxAge: 86400 // Cache preflight request results for 1 day (in seconds)
+}));
+
+// Option 3: CORS for specific routes
+app.get('/api/public', cors(), (req, res) => {
+  res.json({ message: 'This is public' });
+});
+
+// Option 4: Dynamic CORS configuration
+app.use((req, res, next) => {
+  const allowedOrigins = ['https://site1.com', 'https://site2.com'];
+  const origin = req.headers.origin;
+  
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  
+  next();
+});
+
+app.listen(3000, () => console.log('Server running on port 3000'));
+```
+Common CORS issues and solutions:
+1. **Credentials/cookies not being sent**: As noted in the August 31st Discord discussion, when using credentials (like cookies), you must:
+  - Set `credentials: 'include'` in the fetch request
+  - Set `Access-Control-Allow-Credentials: true` on the server
+  - Specify an exact origin (not wildcard `*`)
+2. **Preflight requests**: For non-simple requests (custom headers, methods other than GET/POST), browsers send an OPTIONS request first:
+```javascript
+app.options('*', cors()); // Enable preflight for all routes
+```
+3. **Development workarounds**: As mentioned in the js-solutions.md document from August 31st:
+  - Configure proxy in development server
+  - Use CORS browser extensions (for testing only)
+  - Run frontend and backend on same origin
+
+
+## Solution 64
+*Reference: [Solution 64](node-questions.md#solution-64)*
+
+### Q. What are common security vulnerabilities in Node.js apps (e.g., XSS, CSRF) and how to mitigate them?
+
+1. **Cross-Site Scripting (XSS)**
+XSS attacks occur when attackers inject malicious client-side scripts into web pages viewed by other users.
+**Mitigation:**
+  ```javascript
+  const express = require('express');
+  const helmet = require('helmet');
+  const app = express();
+
+  // Use helmet to set security headers
+  app.use(helmet());
+
+  // Sanitize user input
+  const createDOMPurify = require('dompurify');
+  const { JSDOM } = require('jsdom');
+  const window = new JSDOM('').window;
+  const DOMPurify = createDOMPurify(window);
+
+  app.post('/comment', (req, res) => {
+    // Sanitize input
+    const sanitizedComment = DOMPurify.sanitize(req.body.comment);
+    
+    // Store sanitized comment
+    // db.saveComment(sanitizedComment);
+    
+    res.json({ success: true });
+  });
+
+  // Use a template engine that automatically escapes output
+  // Example with EJS:
+  // app.set('view engine', 'ejs');
+  ```
+
+2. **Cross-Site Request Forgery (CSRF)**
+As detailed in the document from September 3rd, CSRF attacks trick authenticated users into executing unwanted actions on websites where they're logged in.
+**Mitigation:**
+```javascript
+const express = require('express');
+const csrf = require('csurf');
+const cookieParser = require('cookie-parser');
+const app = express();
+
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
+
+// Setup CSRF protection
+const csrfProtection = csrf({ cookie: true });
+
+// Apply to routes that change state
+app.get('/form', csrfProtection, (req, res) => {
+  // Pass the token to your template
+  res.render('form', { csrfToken: req.csrfToken() });
+});
+
+app.post('/process', csrfProtection, (req, res) => {
+  // The request will be rejected if the CSRF token doesn't match
+  res.send('Data processed successfully');
+});
+```
+In your form template:
+```html
+<form action="/process" method="POST">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <!-- Other form fields -->
+  <button type="submit">Submit</button>
+</form>
+```
+Other CSRF mitigations mentioned in the September 2nd Grok/X memory:
+- SameSite Cookies (set to 'Strict' or 'Lax')
+- Origin/Referer header verification
+- Double-submit cookies
+
+3. **Injection Attacks (SQL, NoSQL, Command)**
+```javascript
+// SQL Injection prevention - use parameterized queries
+const { Client } = require('pg');
+const client = new Client();
+
+app.get('/user/:id', async (req, res) => {
+  // UNSAFE: const query = `SELECT * FROM users WHERE id = ${req.params.id}`;
+  
+  // SAFE: Use parameterized queries
+  const query = 'SELECT * FROM users WHERE id = $1';
+  const values = [req.params.id];
+  
+  try {
+    const result = await client.query(query, values);
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).send('Server error');
+  }
+});
+
+// NoSQL Injection prevention
+const User = require('./models/User'); // Mongoose model
+
+app.post('/login', async (req, res) => {
+  // UNSAFE: User.findOne({ username: req.body.username, password: req.body.password })
+  
+  // SAFE: Validate and sanitize inputs
+  const { username, password } = req.body;
+  
+  try {
+    // Find user by username only
+    const user = await User.findOne({ username });
+    
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
+    // Compare password using proper methods (e.g., bcrypt)
+    const isMatch = await bcrypt.compare(password, user.password);
+    
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
+    // Proceed with authentication
+    res.json({ message: 'Login successful' });
+  } catch (err) {
+    res.status(500).send('Server error');
+  }
+});
+```
+4. **Content Security Policy (CSP)**
+As described in the September 2nd Grok/X memory, CSP is a security standard that helps prevent XSS and other code injection attacks by specifying which dynamic resources are allowed to load.
+**Implementation:**
+```javascript
+const express = require('express');
+const helmet = require('helmet');
+const app = express();
+
+// Basic CSP setup with helmet
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'", "https://trusted-cdn.com"],
+    styleSrc: ["'self'", "https://trusted-cdn.com"],
+    imgSrc: ["'self'", "https://trusted-cdn.com", "data:"],
+    connectSrc: ["'self'", "https://api.example.com"],
+    fontSrc: ["'self'", "https://trusted-cdn.com"],
+    objectSrc: ["'none'"],
+    mediaSrc: ["'self'"],
+    frameSrc: ["'none'"],
+    reportUri: '/csp-violation-report'
+  }
+}));
+
+// Endpoint to collect CSP violation reports
+app.post('/csp-violation-report', (req, res) => {
+  console.log('CSP Violation:', req.body);
+  res.status(204).end();
+});
+```
+5. **Dependency Vulnerabilities**
+**Mitigation:**
+```bash
+# Regularly audit dependencies
+npm audit
+
+# Fix vulnerabilities automatically when possible
+npm audit fix
+
+# Use package lockfiles
+npm ci # Instead of npm install in production/CI environments
+```
+
+## Question 65
+*Reference: [Question 65](node-questions.md#question-65)*
+
+### Q. How do you use environment variables for secure configuration in Node.js?
+
+Environment variables store sensitive configs (e.g., API keys, DB URLs) outside code—loaded via process.env for security, portability, and separation of concerns. As of 2025, this aligns with 12-factor app principles, preventing hardcoding leaks in repos 
+
+- Usage: Access with process.env.VAR_NAME; default with ?? (nullish coalescing).
+- Loading: Use dotenv package to read from .env files (dev only; not committed).
+- Security: Never commit .env; use secrets managers (AWS Secrets Manager/Docker secrets) in prod; validate with joi.
+
+Example:
+```javascript
+
+require('dotenv').config(); // Load .env
+
+const dbUrl = process.env.DB_URL ?? 'mongodb://localhost:27017/default';
+const port = parseInt(process.env.PORT ?? '3000', 10);
+
+app.listen(port, () => console.log(`Running on port ${port}`));
+```
+
+.env Example:
+```bash
+DB_URL=mongodb://localhost:27017/default
+PORT=3000
+```
+
+## Solution 66
+*Reference: [Solution 66](node-questions.md#solution-66)*
+
+### Q. What is helmet middleware, and what does it do?
+
+Helmet is a collection of middleware functions for Express.js that helps secure your applications by setting various HTTP headers. These headers help protect against common web vulnerabilities.
+```javascript
+const express = require('express');
+const helmet = require('helmet');
+const app = express();
+
+// Basic usage - applies all default protections
+app.use(helmet());
+
+// Or configure specific protections
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://trusted-cdn.com"]
+    }
+  },
+  crossOriginEmbedderPolicy: true,
+  crossOriginOpenerPolicy: true,
+  crossOriginResourcePolicy: { policy: "same-site" },
+  dnsPrefetchControl: { allow: false },
+  expectCt: { maxAge: 86400, enforce: true },
+  frameguard: { action: 'deny' },
+  hidePoweredBy: true,
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  ieNoOpen: true,
+  noSniff: true,
+  originAgentCluster: true,
+  permittedCrossDomainPolicies: { permittedPolicies: "none" },
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  xssFilter: true
+}));
+
+app.get('/', (req, res) => {
+  res.send('Helmet is protecting this application');
+});
+
+app.listen(3000, () => console.log('Server running on port 3000'));
+```
+Key security headers set by helmet:
+1. **Content-Security-Policy**: Controls which resources can be loaded
+2. **X-Frame-Options**: Prevents clickjacking by controlling iframe usage
+3. **Strict-Transport-Security (HSTS)**: Forces HTTPS connections
+4. **X-Content-Type-Options**: Prevents MIME-type sniffing
+5. **Referrer-Policy**: Controls how much referrer information is included
+6. **X-XSS-Protection**: Enables browser's built-in XSS filters
+7. **X-DNS-Prefetch-Control**: Controls DNS prefetching
+8. **Permissions-Policy**: Restricts which browser features can be used
+
+Helmet doesn't solve all security issues, but it's an easy first step to improve your application's security posture. It should be combined with other security practices like proper input validation, authentication, and authorization.

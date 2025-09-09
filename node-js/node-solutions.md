@@ -4767,3 +4767,905 @@ Key security headers set by helmet:
 8. **Permissions-Policy**: Restricts which browser features can be used
 
 Helmet doesn't solve all security issues, but it's an easy first step to improve your application's security posture. It should be combined with other security practices like proper input validation, authentication, and authorization.
+
+
+# Error handling and Debugging
+
+## Solution 67
+*Reference: [Solution 67](node-questions.md#solution-67)*
+
+### Q. How do you handle uncaught exceptions in Node.js?
+
+In Node.js, uncaught exceptions require special handling to prevent application crashes and ensure proper error recovery. There are several approaches to manage uncaught exceptions.
+
+1. **Global process event handlers**:
+```javascript
+// For synchronous errors
+process.on('uncaughtException', (err, origin) => {
+  console.error(`Uncaught Exception: ${err.message}`);
+  console.error(`Exception origin: ${origin}`);
+  // Perform cleanup operations
+  // Log error details to monitoring service
+     
+  // Best practice: Exit after uncaught exception
+  process.exit(1);
+});
+   
+// For unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise);
+  console.error('Reason:', reason);
+  // Log to monitoring service
+});
+```
+2. **Error boundaries and domains** (historical approach):
+While domains are deprecated (more on this in the next question), the concept of creating error boundaries around critical code sections remains valid.
+
+3. **Using try-catch in synchronous code**:
+```javascript
+try {
+  // Risky synchronous code
+  riskyOperation();
+} catch (err) {
+  console.error('Error caught:', err);
+  // Handle error gracefully
+}
+```
+4. **Graceful shutdown strategies**:
+After catching an uncaught exception, it's often best to log the error, clean up resources, and restart the process because the application might be in an unstable state.
+
+Best practices:
+- Always log uncaught exceptions for later diagnosis.
+- Use monitoring tools to track uncaught exceptions.
+- Implement proper cleanup for open connections.
+- Consider using process managers like PM2 for automatic restarts.
+- Exit the process after an uncaught exception as the application state might be corrupted.
+
+## Solution 68
+*Reference: [Solution 68](node-questions.md#solution-68)*
+
+### Q. What is the domain module, and is it still recommended?
+
+The domain module was an older Node.js API designed to handle multiple different I/O operations as a single group and handle uncaught exceptions from within that group.
+The domain module in Node.js is deprecated, and it's recommended to use the new URL class instead.
+
+```javascript
+const domain = require('domain');
+const d = domain.create();
+
+d.on('error', (err) => {
+  console.error('Domain caught error:', err);
+  // Handle the error safely
+});
+
+d.run(() => {
+  // Code that might throw
+  setTimeout(() => {
+    throw new Error('Async error');
+  }, 100);
+});
+```
+**Current status and recommendations**:
+The domain module is **deprecated** and is not recommended for new code. It was deprecated in Node.js v4 and has remained in that state ever since. According to the Node.js documentation.
+> "This module is pending deprecation. Once a replacement API has been finalized, this module will be fully deprecated. Most developers should use the 'try/catch' structure instead."
+**Alternatives to domains**:
+1. Using `try/catch` with async/await (see next question).
+2. Proper Promise error handling with `.catch()`.
+3. Using the global `process.on('uncaughtException')` handler.
+4. Using more modern error management libraries.
+
+The fundamental issue with domains was that they couldn't guarantee complete isolation, and error handling could still be inconsistent. Modern JavaScript features like Promises, async/await, and proper error propagation techniques are now preferred.
+
+## Solution 69
+*Reference: [Solution 69](node-questions.md#solution-69)*
+
+### Q. Explain how to use try-catch with async/await.
+
+Async/await provides a clean, synchronous-looking way to handle asynchronous code, including error handling through standard try-catch blocks. This is one of the major advantages of async/await over traditional Promise chains.
+
+**Basic structure**:
+```javascript
+async function fetchUserData(userId) {
+  try {
+    const user = await fetchUser(userId);
+    const posts = await fetchPosts(user.id);
+    return { user, posts };
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    // Handle specific error types
+    if (error.name === 'NotFoundError') {
+      return { user: null, posts: [] };
+    }
+    // Re-throw or return a default value
+    throw error; // or return default
+  } finally {
+    // Clean up resources if needed
+    console.log('Fetch operation completed');
+  }
+}
+```
+**Key concepts**:
+1. **The entire async function body becomes a try-catch scope**:
+Any awaited promise that rejects will trigger the catch block.
+2. **Multiple await statements in a single try block**:
+You can have multiple await statements in one try block, and the catch will handle errors from any of them.
+3. **Error differentiation**:
+1. Inside catch blocks, you can inspect the error object to determine the type of error and respond accordingly.
+2. **Re-throwing or transforming errors**:
+You can re-throw the original error or transform it to provide more context.
+3. **Using finally for cleanup**:
+The finally block executes regardless of whether the try block succeeds or fails.
+**Advanced patterns**:
+```javascript
+// Error boundaries in larger functions
+async function processUserData(userId) {
+  let user;
+  
+  try {
+    user = await fetchUser(userId);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    return { success: false, error: 'User not found' };
+  }
+  
+  try {
+    const posts = await fetchPosts(user.id);
+    const analytics = await getUserAnalytics(user.id);
+    return { success: true, data: { user, posts, analytics } };
+  } catch (error) {
+    console.error('Error fetching user details:', error);
+    return { success: true, data: { user, posts: [], analytics: null } };
+  }
+}
+```
+
+## Solution 70
+*Reference: [Solution 70](node-questions.md#solution-70)*
+
+### Q. What tools can you use for debugging Node.js applications?
+
+Node.js offers a variety of debugging tools ranging from built-in utilities to advanced third-party solutions.
+
+1. **Built-in Node.js Debugger**:
+```bash
+# Run Node with inspector protocol enabled
+node --inspect app.js
+   
+# Break on first line
+node --inspect-brk app.js
+```
+2. Then connect using Chrome DevTools by navigating to chrome://inspect.
+
+3. **VS Code Debugger**:
+VS Code provides excellent Node.js debugging support with a graphical interface for:
+  - Setting breakpoints
+  - Watching variables
+  - Inspecting the call stack
+  - Conditional breakpoints
+
+4. Example launch.json configuration:
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Application",
+      "program": "${workspaceFolder}/app.js",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}
+```
+5. **Console methods**:
+  - `console.log()`, `console.error()`, `console.warn()`
+  - `console.table()` for displaying tabular data
+  - `console.time()` and `console.timeEnd()` for performance measurement
+  - `console.trace()` for stack traces
+
+6. **Node.js Inspector**:
+The built-in inspector provides a programmatic API to the V8 inspector.
+
+7. **ndb (Node Debugger)**:
+An improved debugging experience built on Chrome DevTools.
+```bash
+npm install -g ndb
+ndb app.js
+```
+2. **APM (Application Performance Monitoring) tools**:
+  - New Relic
+  - Datadog
+  - AppDynamics
+  - These provide production debugging capabilities including error tracking, performance metrics, and distributed tracing.
+
+3. **Node.js specific profiling tools**:
+  - `node --prof` for CPU profiling
+  - `node --inspect` with the Memory and Performance tabs in Chrome DevTools
+  - Clinic.js suite (Doctor, Bubbleprof, Flame)
+
+4. **Specialized debugging packages**:
+  - `debug` - Conditional debugging with namespaces
+  - `why-is-node-running` - Track down processes that prevent Node from exiting
+  - `longjohn` - Longer and more detailed stack traces
+
+
+## Solution 71
+*Reference: [Solution 71](node-questions.md#solution-71)*
+
+### Q. How do you log errors effectively in a production Node.js app?
+
+Effective error logging in a production Node.js application involves several best practices to ensure errors are properly captured, structured, and actionable.
+
+1. **Use a dedicated logging library**:
+  ```javascript
+  const winston = require('winston');
+    
+  const logger = winston.createLogger({
+    level: process.env.LOG_LEVEL || 'info',
+    format: winston.format.combine(
+      winston.format.timestamp(),
+      winston.format.json()
+    ),
+    transports: [
+      new winston.transports.Console(),
+      new winston.transports.File({ filename: 'error.log', level: 'error' }),
+      new winston.transports.File({ filename: 'combined.log' })
+    ]
+  });
+    
+  // Usage
+  try {
+    throw new Error('Database connection failed');
+  } catch (error) {
+    logger.error('Failed to connect to database', {
+      error: {
+        message: error.message,
+        stack: error.stack,
+        code: error.code
+      },
+      context: {
+        service: 'user-service',
+        operation: 'getUserProfile'
+      }
+    });
+  }
+  ```
+2. **Structured logging with context**:
+Include additional context with each log to make debugging easier:
+  - Request ID (for tracing requests across microservices)
+  - User ID (when applicable)
+  - Service/module name
+  - Environment information
+  - Stack traces for errors
+3. **Log levels and filtering**:
+Use appropriate log levels (error, warn, info, debug) and configure different outputs based on environment.
+4. **Centralized log management**:
+Send logs to centralized services like:
+  - ELK Stack (Elasticsearch, Logstash, Kibana)
+  - Graylog
+  - Splunk
+  - Cloud-based solutions (DataDog, New Relic, LogDNA)
+5. **Error aggregation and alerting**:
+Use error tracking services that group similar errors:
+  - Sentry
+  - Rollbar
+  - Bugsnag
+
+  ```javascript
+  const Sentry = require('@sentry/node');
+    
+  Sentry.init({
+    dsn: 'https://examplePublicKey@o0.ingest.sentry.io/0',
+    environment: process.env.NODE_ENV
+  });
+    
+  try {
+    throw new Error('Payment processing failed');
+  } catch (error) {
+    Sentry.captureException(error);
+    logger.error('Payment error', { error });
+  }
+  ```
+6. **Custom error classes for better categorization**:
+```javascript
+class DatabaseError extends Error {
+  constructor(message, query) {
+    super(message);
+    this.name = 'DatabaseError';
+    this.query = query;
+  }
+}
+   
+try {
+  throw new DatabaseError('Query timeout', 'SELECT * FROM users');
+} catch (error) {
+  logger.error('Database operation failed', { error });
+}
+```
+7. **Performance considerations**:
+  - Use asynchronous logging to avoid blocking the event loop
+  - Consider sampling high-volume logs in extremely busy systems
+  - Implement log rotation to manage file sizes
+8. **Security considerations**:
+  - Never log sensitive information (passwords, tokens, PII)
+  - Implement redaction for potentially sensitive fields
+  - Be cautious with error messages exposed to clients
+9. **Health metrics alongside errors**:
+Combine error logging with system health metrics for correlation:
+  - Memory usage
+  - CPU load
+  - Request rates
+  - Response times
+
+
+# Testing
+
+## Solution 72
+*Reference: [Solution 72](node-questions.md#solution-72)*
+
+### Q. What is Mocha, and how do you set up tests with it?
+
+Mocha is a popular JavaScript test framework that runs on Node.js and in the browser. It provides a flexible and feature-rich environment for organizing and executing test suites.
+
+**Key features of Mocha:**
+- Supports both BDD (Behavior-Driven Development) and TDD (Test-Driven Development) interfaces
+- Supports asynchronous testing with promises, async/await, and callbacks
+- Offers rich reporting and customizable output formats
+- Provides test hooks (before, after, beforeEach, afterEach)
+- Supports test filtering and exclusion
+
+**Setting up Mocha:**
+1. **Installation:**
+```bash
+npm install --save-dev mocha
+```
+2. **Create a test directory structure:**
+```
+project/
+├── src/
+│   └── app.js
+└── test/
+    └── app.test.js
+```
+3. **Write a simple test:**
+```javascript
+// test/app.test.js
+const assert = require('assert');
+const { add } = require('../src/app');
+
+describe('Math functions', function() {
+  describe('#add()', function() {
+    it('should return the sum of two numbers', function() {
+      assert.strictEqual(add(2, 3), 5);
+    });
+    
+    it('should handle negative numbers', function() {
+      assert.strictEqual(add(-1, -1), -2);
+    });
+  });
+});
+```
+4. **Configure package.json:**
+```json
+{
+  "scripts": {
+    "test": "mocha"
+  }
+}
+```
+5. **Run the tests:**
+```bash
+npm test
+```
+For more complex setups, you can create a `.mocharc.js` or `.mocharc.json` configuration file in your project root
+```javascript
+// .mocharc.js
+module.exports = {
+  reporter: 'spec',
+  timeout: 5000,
+  recursive: true,
+  require: ['./test/setup.js']
+};
+```
+
+## Solution 73
+*Reference: [Solution 73](node-questions.md#solution-73)*
+
+### Q. Explain the difference between unit tests and integration tests in Node.js.
+
+In Node.js applications, both unit tests and integration tests serve different purposes and focus on different aspects of your code.
+
+**Unit Tests:**
+- Test individual components (functions, classes, modules) in isolation
+- Dependencies are typically mocked or stubbed
+- Fast to execute and focused on specific functionality
+- Help identify issues in specific pieces of code
+- Usually cover a high percentage of code paths
+```javascript
+// Example unit test for a function
+const { expect } = require('chai');
+const { calculateTax } = require('../src/tax-calculator');
+
+describe('Tax Calculator', function() {
+  it('should calculate 10% tax correctly', function() {
+    // Testing a single function in isolation
+    expect(calculateTax(100, 0.1)).to.equal(10);
+  });
+});
+```
+**Integration Tests:**
+- Test how multiple components work together
+- Use real dependencies or a subset of the real system
+- Slower than unit tests but provide more confidence in system behavior
+- Identify issues in the interactions between components
+- Typically cover critical paths rather than every possible scenario
+```javascript
+// Example integration test for a database operation
+const { expect } = require('chai');
+const { createUser, findUserById } = require('../src/user-service');
+const db = require('../src/database');
+
+describe('User Service Integration', function() {
+  before(async function() {
+    await db.connect();
+  });
+  
+  after(async function() {
+    await db.disconnect();
+  });
+  
+  it('should create and retrieve a user', async function() {
+    // Testing multiple components working together
+    const user = { name: 'Test User', email: 'test@example.com' };
+    const createdUser = await createUser(user);
+    
+    const retrievedUser = await findUserById(createdUser.id);
+    expect(retrievedUser.name).to.equal(user.name);
+    expect(retrievedUser.email).to.equal(user.email);
+  });
+});
+```
+**Key differences:**
+| Aspect | Unit Tests | Integration Tests |
+| :--- | :--- | :--- |
+| Scope | Single units in isolation | Multiple components working together |
+| Dependencies | Mocked/stubbed | Real or partially real |
+| Speed | Fast | Slower |
+| Complexity | Simple | More complex |
+| Setup/Teardown | Minimal | More extensive |
+| Coverage | High % of code paths | Key interactions and flows |
+| Failure Diagnosis | Easy to pinpoint | Can be more difficult |
+
+In practice, a healthy test strategy includes both unit and integration tests. Unit tests provide quick feedback during development, while integration tests ensure that components work correctly together in the actual system environment.
+
+
+## Solution 74
+*Reference: [Solution 74](node-questions.md#solution-74)*
+
+### Q. How do you use Chai for assertions in tests?
+
+Chai is a popular assertion library for Node.js that can be paired with testing frameworks like Mocha. It provides several styles of assertions to make tests more readable and expressive.
+**Setting up Chai:**
+```bash
+npm install --save-dev chai
+```
+**Chai offers three assertion styles:**
+1. **Assert style** - traditional TDD assertions
+2. **BDD style: expect** - BDD-style chains of assertions
+3. **BDD style: should** - attaches properties to `Object.prototype`
+
+Here's how to use each style:
+**Assert Style:**
+```javascript
+const { assert } = require('chai');
+
+describe('Assert style', function() {
+  it('should demonstrate assert style', function() {
+    const foo = 'bar';
+    const obj = { a: 1 };
+    
+    assert.typeOf(foo, 'string');
+    assert.equal(foo, 'bar');
+    assert.lengthOf(foo, 3);
+    assert.property(obj, 'a');
+    assert.deepEqual(obj, { a: 1 });
+  });
+});
+```
+**Expect Style (most commonly used):**
+```javascript
+const { expect } = require('chai');
+
+describe('Expect style', function() {
+  it('should demonstrate expect style', function() {
+    const foo = 'bar';
+    const obj = { a: 1 };
+    
+    expect(foo).to.be.a('string');
+    expect(foo).to.equal('bar');
+    expect(foo).to.have.lengthOf(3);
+    expect(obj).to.have.property('a');
+    expect(obj).to.deep.equal({ a: 1 });
+    
+    // Chaining for more readable assertions
+    expect(foo)
+      .to.be.a('string')
+      .and.equal('bar')
+      .and.have.lengthOf(3);
+      
+    // Negation
+    expect(foo).to.not.equal('baz');
+  });
+});
+```
+**Should Style:**
+```javascript
+const chai = require('chai');
+chai.should(); // Enables should style
+
+describe('Should style', function() {
+  it('should demonstrate should style', function() {
+    const foo = 'bar';
+    const obj = { a: 1 };
+    
+    foo.should.be.a('string');
+    foo.should.equal('bar');
+    foo.should.have.lengthOf(3);
+    obj.should.have.property('a');
+    obj.should.deep.equal({ a: 1 });
+  });
+});
+```
+**Common Chai assertions:**
+```javascript
+// String assertions
+expect(string).to.be.a('string');
+expect(string).to.equal('value');
+expect(string).to.include('substring');
+expect(string).to.match(/pattern/);
+
+// Number assertions
+expect(number).to.be.a('number');
+expect(number).to.equal(5);
+expect(number).to.be.above(3);
+expect(number).to.be.below(10);
+expect(number).to.be.within(1, 10);
+
+// Boolean assertions
+expect(value).to.be.true;
+expect(value).to.be.false;
+
+// Null/undefined assertions
+expect(value).to.be.null;
+expect(value).to.be.undefined;
+expect(value).to.exist;
+
+// Object assertions
+expect(object).to.be.an('object');
+expect(object).to.have.property('key');
+expect(object).to.have.property('key').with.lengthOf(3);
+expect(object).to.deep.equal({ a: 1 });
+expect(object).to.have.keys('a', 'b');
+
+// Array assertions
+expect(array).to.be.an('array');
+expect(array).to.have.lengthOf(3);
+expect(array).to.include(item);
+expect(array).to.deep.include({ a: 1 });
+
+// Exception assertions
+expect(function() { throw new Error('boom'); }).to.throw();
+expect(function() { throw new Error('boom'); }).to.throw('boom');
+expect(function() { throw new Error('boom'); }).to.throw(Error);
+```
+
+
+## Solution 75
+*Reference: [Solution 75](node-questions.md#solution-75)*
+
+### Q. What is Supertest for testing Express APIs?
+
+Supertest is a popular library for testing HTTP servers and APIs, particularly those built with Express.js. It provides a high-level abstraction for making HTTP requests and assertions on the responses, making it ideal for API testing.
+**Key features of Supertest:**
+- Makes HTTP requests to your Express application
+- Provides a fluent API for assertions
+- Supports the full range of HTTP methods
+- Can test both request parameters and response properties
+- Works well with testing frameworks like Mocha and assertion libraries like Chai
+**Setting up Supertest:**
+```bash
+npm install --save-dev supertest
+```
+**Basic usage example:**
+```javascript
+const request = require('supertest');
+const { expect } = require('chai');
+const app = require('../src/app');
+
+describe('User API', function() {
+  it('GET /users should return a list of users', function(done) {
+    request(app)
+      .get('/users')
+      .expect('Content-Type', /json/)
+      .expect(200)
+      .end(function(err, res) {
+        if (err) return done(err);
+        expect(res.body).to.be.an('array');
+        done();
+      });
+  });
+  
+  it('POST /users should create a new user', function() {
+    // Using promises instead of callback
+    return request(app)
+      .post('/users')
+      .send({ name: 'John', email: 'john@example.com' })
+      .expect('Content-Type', /json/)
+      .expect(201)
+      .then(res => {
+        expect(res.body).to.have.property('id');
+        expect(res.body.name).to.equal('John');
+      });
+  });
+  
+  // Using async/await
+  it('GET /users/:id should return a single user', async function() {
+    const res = await request(app)
+      .get('/users/1')
+      .expect('Content-Type', /json/)
+      .expect(200);
+      
+    expect(res.body).to.have.property('id', 1);
+    expect(res.body).to.have.property('name');
+  });
+});
+```
+**Practical application - testing CRUD operations:**
+```javascript
+const request = require('supertest');
+const { expect } = require('chai');
+const app = require('../src/app');
+let createdUserId;
+
+describe('User API Integration Tests', function() {
+  // Create
+  it('should create a new user', async function() {
+    const res = await request(app)
+      .post('/api/users')
+      .send({
+        name: 'Test User',
+        email: 'test@example.com',
+        role: 'user'
+      })
+      .expect(201);
+      
+    expect(res.body).to.have.property('id');
+    expect(res.body.name).to.equal('Test User');
+    createdUserId = res.body.id;
+  });
+  
+  // Read
+  it('should retrieve the created user', async function() {
+    const res = await request(app)
+      .get(`/api/users/${createdUserId}`)
+      .expect(200);
+      
+    expect(res.body.id).to.equal(createdUserId);
+    expect(res.body.email).to.equal('test@example.com');
+  });
+  
+  // Update
+  it('should update the user', async function() {
+    const res = await request(app)
+      .put(`/api/users/${createdUserId}`)
+      .send({
+        name: 'Updated Name',
+        email: 'updated@example.com'
+      })
+      .expect(200);
+      
+    expect(res.body.name).to.equal('Updated Name');
+  });
+  
+  // Delete
+  it('should delete the user', async function() {
+    await request(app)
+      .delete(`/api/users/${createdUserId}`)
+      .expect(204);
+      
+    // Verify user no longer exists
+    await request(app)
+      .get(`/api/users/${createdUserId}`)
+      .expect(404);
+  });
+});
+```
+
+## Solution 76
+*Reference: [Solution 76](node-questions.md#solution-76)*
+
+### Q. How do you mock dependencies in Node.js tests using Sinon?
+
+Sinon is a powerful testing library for JavaScript that provides standalone test spies, stubs, and mocks. It's especially useful for isolating units of code by replacing their dependencies with controlled test doubles.
+
+**Setting up Sinon:**
+```bash
+npm install --save-dev sinon
+```
+**Key Sinon features:**
+1. **Spies** - track function calls without changing behavior
+2. **Stubs** - replace functions with test doubles that control behavior
+3. **Mocks** - combine spies and stubs with pre-programmed expectations
+4. **Fake timers** - control time-dependent code
+5. **Fake XHR and server** - simulate HTTP requests
+
+Here's how to use these features in your tests:
+**Spies:**
+```javascript
+const sinon = require('sinon');
+const { expect } = require('chai');
+const user = require('../src/user');
+const logger = require('../src/logger');
+
+describe('User Service', function() {
+  it('should log when user is created', function() {
+    // Create a spy on the logger.info method
+    const loggerSpy = sinon.spy(logger, 'info');
+    
+    // Call the function we want to test
+    user.create({ name: 'Test User' });
+    
+    // Assert that the spy was called correctly
+    expect(loggerSpy.calledOnce).to.be.true;
+    expect(loggerSpy.calledWith('User created: Test User')).to.be.true;
+    
+    // Restore the original function
+    loggerSpy.restore();
+  });
+});
+```
+**Stubs:**
+```javascript
+const sinon = require('sinon');
+const { expect } = require('chai');
+const userService = require('../src/user-service');
+const database = require('../src/database');
+
+describe('User Service', function() {
+  it('should handle database errors when creating users', function() {
+    // Create a stub for the database.save method that rejects with an error
+    const saveStub = sinon.stub(database, 'save').rejects(new Error('DB Error'));
+    
+    // Test that the error is handled properly
+    return userService.createUser({ name: 'Test' })
+      .then(() => {
+        throw new Error('Expected method to reject');
+      })
+      .catch(err => {
+        expect(err.message).to.equal('Could not create user');
+        expect(saveStub.calledOnce).to.be.true;
+        saveStub.restore();
+      });
+  });
+  
+  it('should return user data when retrieving a user', function() {
+    // Create a stub that returns a specific value
+    const findStub = sinon.stub(database, 'find').resolves({ id: 1, name: 'Test User' });
+    
+    return userService.getUser(1)
+      .then(user => {
+        expect(user.name).to.equal('Test User');
+        expect(findStub.calledWith(1)).to.be.true;
+        findStub.restore();
+      });
+  });
+});
+```
+**Mocks:**
+```javascript
+const sinon = require('sinon');
+const { expect } = require('chai');
+const emailService = require('../src/email-service');
+const notificationService = require('../src/notification-service');
+
+describe('Notification Service', function() {
+  it('should send welcome email to new users', function() {
+    // Create a mock for the entire emailService object
+    const emailMock = sinon.mock(emailService);
+    
+    // Set up expectations
+    emailMock.expects('sendWelcomeEmail')
+      .once()
+      .withArgs('test@example.com', 'Welcome!')
+      .resolves(true);
+    
+    // Call the method we're testing
+    return notificationService.notifyNewUser({ email: 'test@example.com' })
+      .then(() => {
+        // Verify all expectations were met
+        emailMock.verify();
+        emailMock.restore();
+      });
+  });
+});
+```
+**Fake timers:**
+```javascript
+const sinon = require('sinon');
+const { expect } = require('chai');
+const cacheService = require('../src/cache-service');
+
+describe('Cache Service', function() {
+  let clock;
+  
+  beforeEach(function() {
+    // Replace the global timer functions with Sinon fakes
+    clock = sinon.useFakeTimers();
+  });
+  
+  afterEach(function() {
+    // Restore original timer functions
+    clock.restore();
+  });
+  
+  it('should expire cache entries after timeout', function() {
+    cacheService.set('key', 'value', { ttl: 5000 });
+    
+    // Cache entry should exist initially
+    expect(cacheService.get('key')).to.equal('value');
+    
+    // Advance time by 6 seconds
+    clock.tick(6000);
+    
+    // Cache entry should now be expired
+    expect(cacheService.get('key')).to.be.null;
+  });
+});
+```
+**Injecting dependencies for testing:**
+For effective mocking, you should design your code with dependency injection in mind:
+```javascript
+// src/user-service.js - Bad for testing
+const database = require('./database');
+
+function createUser(userData) {
+  return database.save('users', userData);
+}
+
+// src/user-service.js - Better for testing
+function createUserService(db) {
+  return {
+    createUser(userData) {
+      return db.save('users', userData);
+    }
+  };
+}
+
+// Default export with real database
+const database = require('./database');
+module.exports = createUserService(database);
+
+// In test
+const sinon = require('sinon');
+const { expect } = require('chai');
+const createUserService = require('../src/user-service');
+
+describe('User Service', function() {
+  it('should save user data', function() {
+    // Create a mock database
+    const mockDb = {
+      save: sinon.stub().resolves({ id: 1 })
+    };
+    
+    // Create service with mock dependency
+    const userService = createUserService(mockDb);
+    
+    return userService.createUser({ name: 'Test' })
+      .then(result => {
+        expect(result.id).to.equal(1);
+        expect(mockDb.save.calledOnce).to.be.true;
+      });
+  });
+});
+```

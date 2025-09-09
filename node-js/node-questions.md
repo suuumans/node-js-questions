@@ -215,5 +215,41 @@ What are common security vulnerabilities in Node.js apps (e.g., XSS, CSRF) and h
 ## Question 65
 How do you use environment variables for secure configuration in Node.js?
 
-# Question 66
+## Question 66
 What is helmet middleware, and what does it do?
+
+
+# Error Handling and Debugging
+
+## Question 67
+67. How do you handle uncaught exceptions in Node.js?
+
+## Question 68
+68. What is the domain module, and is it still recommended?
+
+## Question 69
+69. Explain how to use try-catch with async/await.
+
+## Question 70
+70. What tools can you use for debugging Node.js applications (e.g., Node Inspector, VS Code debugger)?
+
+## Question 71
+71. How do you log errors effectively in a production Node.js app?
+
+
+# Testing
+
+## Question 72
+72. What is Mocha, and how do you set up tests with it?
+
+## Question 73
+73. Explain the difference between unit tests and integration tests in Node.js.
+
+## Question 74
+74. How do you use Chai for assertions in tests?
+
+## Question 75
+75. What is Supertest for testing Express APIs?
+
+## Question 76
+76. How do you mock dependencies in Node.js tests using Sinon?

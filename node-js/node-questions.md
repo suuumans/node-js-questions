@@ -253,3 +253,43 @@ What is helmet middleware, and what does it do?
 
 ## Question 76
 76. How do you mock dependencies in Node.js tests using Sinon?
+
+
+# Performance and Scaling
+
+## Question 77
+What is clustering in Node.js, and how does it improve performance?
+
+## Question 78
+Explain the pm2 process manager and its benefits.
+
+## Question 79
+How do you profile a Node.js application for performance issues?
+
+## Question 80
+What is load balancing in a Node.js context?
+
+## Question 81
+How can you optimize Node.js for handling high traffic?
+
+
+
+# RESTful APIs and Advanced Topics
+
+## Question 82
+What makes an API RESTful, and how do you build one in Node.js?
+
+## Question 83
+Explain GraphQL vs REST in Node.js applications.
+
+## Question 84
+How do you implement WebSockets using Socket.io in Node.js?
+
+## Question 85
+What is serverless architecture, and how does Node.js fit in (e.g., AWS Lambda)?
+
+## Question 86
+How do you handle file uploads in Node.js using multer?
+
+## Question 87
+What are microservices, and how can Node.js be used to build them?

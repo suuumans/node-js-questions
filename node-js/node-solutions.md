@@ -5669,3 +5669,1102 @@ describe('User Service', function() {
   });
 });
 ```
+
+# Performance and Scaling
+
+## Solution 77
+*Reference: [Solution 77](node-questions.md#solution-77)*
+
+### Q. What is clustering in Node.js, and how does it improve performance?
+
+Clustering in Node.js is a technique that allows a Node application to create multiple worker processes that share the same server port, enabling it to utilize multi-core systems effectively. Since Node.js is single-threaded by default, clustering helps overcome this limitation by distributing incoming connections across multiple CPU cores.
+
+```javascript
+// Example of Node.js clustering
+const cluster = require('node:cluster');
+const http = require('node:http');
+const numCPUs = require('os').cpus().length;
+const process = require('node:process');
+
+if (cluster.isPrimary) {
+  console.log(`Primary ${process.pid} is running`);
+
+  // Fork workers equal to CPU cores
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
+
+  cluster.on('exit', (worker, code, signal) => {
+    console.log(`Worker ${worker.process.pid} died`);
+    // Optionally restart the worker
+    cluster.fork();
+  });
+} else {
+  // Workers share the same server port
+  http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end(`Hello from Worker ${process.pid}\n`);
+  }).listen(8000);
+
+  console.log(`Worker ${process.pid} started`);
+}
+```
+**How clustering improves performance:**
+1. **CPU Utilization**: Leverages all available CPU cores instead of just one, which can lead to up to N times better throughput (where N is the number of cores).
+2. **Load Distribution**: Automatically distributes incoming connections across all workers, preventing any single thread from becoming a bottleneck.
+3. **Fault Tolerance**: If a worker process crashes, it can be restarted without affecting other workers, improving application resilience.
+4. **Zero Downtime Restarts**: Enables rolling restarts by replacing workers one at a time, allowing for updates without service interruption.
+
+In production environments, I've seen clustering improve throughput by 3-4x on quad-core servers when compared to single-process Node.js applications. The primary process handles little computational work, focusing instead on spawning and monitoring worker processes, while workers handle the actual request processing.
+
+
+## Solution 78
+*Reference: [Solution 78](node-questions.md#solution-78)*
+
+### Q. Explain the pm2 process manager and its benefits.
+
+M2 (Process Manager 2) is a production-grade process manager for Node.js applications that simplifies deployment, monitoring, and scaling. It extends beyond Node's native clustering capabilities with additional features for production environments.
+
+**Key features and benefits of PM2:**
+- **Advanced Process Management**:
+  - **Clustering**: Automatically leverages all CPU cores
+  - **Auto-restart**: Restarts crashed applications
+  - **Zero-downtime reloads**: Updates applications without downtime
+```bash
+# Start an app with 4 worker instances
+pm2 start app.js -i 4
+   
+# Start an app using all available CPUs
+pm2 start app.js -i max
+   
+# Gracefully reload all instances
+pm2 reload app
+```
+- **Monitoring and Logging**:
+  - **Real-time monitoring**: CPU/memory usage metrics
+  - **Log management**: Centralized log handling with rotation
+```bash
+# View dashboard with metrics
+pm2 monit
+   
+# View logs for all applications
+pm2 logs
+   
+# View logs for specific app
+pm2 logs app-name
+```
+- **Load Balancing**:
+  - Automatically distributes incoming connections
+  - Provides network traffic balancing between instances
+
+- **Process Configuration**:
+  - **Ecosystem file**: Declarative configuration for multiple applications
+```javascript
+// ecosystem.config.js
+module.exports = {
+  apps: [{
+    name: "api",
+    script: "./api.js",
+    instances: "max",
+    exec_mode: "cluster",
+    watch: true,
+    env: {
+      NODE_ENV: "development",
+    },
+    env_production: {
+      NODE_ENV: "production",
+    }
+  }]
+};
+```
+- **eployment Workflow**:
+  - Built-in deployment system for automating deployment to multiple servers
+```bash
+# Setup deployment configuration
+pm2 ecosystem
+   
+# Deploy to production
+pm2 deploy production
+```
+- **Startup Script Generation**:
+  - Ensures applications restart after server reboots
+```bash
+# Generate and configure startup script
+pm2 startup
+   
+# Save current process list to be restored
+pm2 save
+```
+- **Container Integration**:
+  - Works well in containerized environments (Docker)
+  - Provides health checks and monitoring
+
+## Solution 79
+*Reference: [Solution 79](node-questions.md#solution-79)*
+
+### Q. How do you profile a Node.js application for performance issues?
+
+rofiling a Node.js application involves measuring its performance characteristics to identify bottlenecks and optimize code. Several built-in and third-party tools can help with this process.
+
+**Built-in Node.js Profiling Tools**
+
+**Node.js Inspector and Chrome DevTools**:
+```bash
+# Start application with inspector
+node --inspect app.js
+
+# Start with inspector break on startup
+node --inspect-brk app.js
+```
+Then open Chrome and navigate to file://chrome://inspect to connect to the Node process and use the profiling tools.
+
+**Performance Hooks API**:
+```javascript
+const { performance, PerformanceObserver } = require('perf_hooks');
+
+// Create a performance observer
+const obs = new PerformanceObserver((items) => {
+  const entries = items.getEntries();
+  entries.forEach((entry) => {
+    console.log(`${entry.name}: ${entry.duration}ms`);
+  });
+});
+
+// Subscribe to specific types of performance events
+obs.observe({ entryTypes: ['measure'] });
+
+// Mark the beginning of an operation
+performance.mark('operation-start');
+
+// Simulate some work
+someExpensiveOperation();
+
+// Mark the end and measure
+performance.mark('operation-end');
+performance.measure('Operation', 'operation-start', 'operation-end');
+```
+**Memory Profiling**
+
+**Heap Snapshots**:
+```javascript
+const heapdump = require('heapdump');
+
+// Generate heap snapshot
+process.on('SIGUSR2', () => {
+  heapdump.writeSnapshot('./heap-' + Date.now() + '.heapsnapshot');
+});
+
+// Or trigger programmatically
+heapdump.writeSnapshot('./heap.heapsnapshot');
+```
+**Memory Usage Monitoring**:
+```javascript
+// Monitor memory usage over time
+setInterval(() => {
+  const memUsage = process.memoryUsage();
+  console.log(`Memory usage: ${Math.round(memUsage.heapUsed / 1024 / 1024)} MB`);
+}, 5000);
+```
+**CPU Profiling**
+
+**Node.js built-in CPU profiler**:
+```bash
+# Generate CPU profile
+node --prof app.js
+
+# Convert to readable format
+node --prof-process isolate-*.log > processed.txt
+```
+**0x - Flame Graph Generator**:
+```bash
+# Install 0x
+npm install -g 0x
+
+# Generate flame graph
+0x app.js
+```
+
+**Application-Level Profiling**
+
+**Middleware for Express**:
+```javascript
+// Measure endpoint performance
+app.use((req, res, next) => {
+  const start = performance.now();
+  
+  res.on('finish', () => {
+    const duration = performance.now() - start;
+    console.log(`${req.method} ${req.url} - ${duration.toFixed(2)}ms`);
+  });
+  
+  next();
+});
+```
+**Database Query Performance**:
+```javascript
+// Measure MongoDB query performance
+const startTime = performance.now();
+const results = await collection.find({ status: 'active' }).toArray();
+const duration = performance.now() - startTime;
+console.log(`Query took: ${duration}ms and returned ${results.length} items`);
+```
+**Third-party Tools**
+
+- **Clinic.js**: Suite of tools for diagnosing performance issues
+```bash
+npm install -g clinic
+clinic doctor -- node app.js
+```
+- **New Relic or Datadog**: Production monitoring solutions that provide deep insights into application performance
+
+## Solution 80
+*Reference: [Solution 80](node-questions.md#solution-80)*
+
+### Q. What is load balancing in a Node.js context?
+
+Load balancing in a Node.js context refers to distributing incoming network traffic across multiple Node.js server instances to optimize resource utilization, maximize throughput, minimize response time, and ensure high availability and reliability.
+
+Types of Load Balancing for Node.js Applications:
+
+- **Process-Level Load Balancing (Internal)**:
+  - Uses Node.js `cluster` module or PM2
+  - Distributes connections across multiple worker processes on the same machine
+  - Example with cluster module (similar to the clustering example above)
+- **Server-Level Load Balancing (External)**:
+  - Uses dedicated load balancers like Nginx, HAProxy, or cloud services
+  - Distributes traffic across multiple Node.js servers on different machines
+```nginx
+# Example Nginx configuration for load balancing
+upstream node_backend {
+  server 192.168.1.101:3000;
+  server 192.168.1.102:3000;
+  server 192.168.1.103:3000;
+  # Load balancing algorithm
+  least_conn;
+}
+
+server {
+  listen 80;
+  location / {
+    proxy_pass http://node_backend;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+  }
+}
+```
+**Load Balancing Strategies:**
+- **Round Robin**: Requests are distributed sequentially across servers
+```javascript
+// Simple round-robin implementation
+const servers = ['server1', 'server2', 'server3'];
+let current = 0;
+   
+function getNextServer() {
+  const server = servers[current];
+  current = (current + 1) % servers.length;
+  return server;
+}
+```
+- **Least Connections**: Sends requests to the server with the fewest active connections.
+
+- **IP Hash**: Uses client's IP address to determine which server receives the request (ensures session persistence).
+
+- **Weighted Round Robin**: Assigns different weights to servers based on their capacity.
+
+**Considerations for Node.js Load Balancing:**
+
+1. **Session Management**:
+  - For stateful applications, use sticky sessions or session stores
+```javascript
+// Using Redis for session store
+const session = require('express-session');
+const RedisStore = require('connect-redis').default;
+const { createClient } = require('redis');
+   
+const redisClient = createClient({
+  url: 'redis://redis-server:6379'
+});
+   
+app.use(session({
+  store: new RedisStore({ client: redisClient }),
+  secret: 'your-secret-key',
+  resave: false,
+  saveUninitialized: false
+}));
+```
+2. **Health Checks**:
+  - Implement health check endpoints for load balancers
+```javascript
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    memory: process.memoryUsage()
+  });
+});
+```
+3. **WebSocket Handling**:
+  - Ensure load balancer supports WebSocket protocol if used
+```javascript
+# Nginx configuration for WebSockets
+location /socket.io/ {
+  proxy_pass http://node_backend;
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection "upgrade";
+}
+```
+
+## Solution 81
+*Reference: [Solution 81](node-questions.md#solution-81)*
+
+### Q. How can you optimize Node.js for handling high traffic?
+
+Optimizing Node.js for high traffic involves a multi-faceted approach targeting code efficiency, architecture design, and infrastructure choices.
+
+- Key Optimizations:
+  - **Clustering/Load Balancing**: Use cluster/PM2 (Q77/Q78/Q80) for multi-core; external balancers for multi-server.
+  - **Async Everything**: Avoid sync ops; use promises/streams for I/O.
+  - **Caching**: Redis/Memcached for hot data; HTTP caching headers.
+  - **Profiling/Tuning**: Clinic.js (Q79) for bottlenecks; --max-old-space-size for heap; UV_THREADPOOL_SIZE for pool.
+  - **Database**: Connection pooling (pg-pool); indexing; batch queries.
+  - **Code**: Fastify over Express for 2x speed; worker threads for CPU-bound.
+  - **Infrastructure**: Containerize with Docker; auto-scale on AWS/EC2; CDN for static.
+  - **Monitoring**: Prometheus/New Relic for metrics/alerts.
+
+Architecture Choices:
+- Horizontal scaling with Docker containers and Kubernetes
+- Redis-based caching for frequent database queries
+- Bull queue for handling email and notification processing
+- PM2 for process management within each container
+- Nginx load balancing with sticky sessions
+
+
+# RESTful APIs and Advanced Topics
+
+## Solution 82
+*Reference: [Solution 82](node-questions.md#solution-82)*
+
+### Q. What makes an API RESTful, and how do you build one in Node.js?
+
+REST (Representational State Transfer) is an architectural style for designing networked applications. An API is considered RESTful when it adheres to the following principles:
+1. **Stateless communication**: Each request from client to server must contain all information needed to understand and process the request. No client context should be stored on the server between requests.
+2. **Resource-based URLs**: Resources (entities) are identified by URLs, and operations are performed using HTTP methods (verbs).
+3. **Standard HTTP methods**: Uses standard HTTP verbs for operations:
+  - GET: Retrieve resources
+  - POST: Create resources
+  - PUT: Update resources (full update)
+  - PATCH: Partial resource update
+  - DELETE: Remove resources
+4. **Representation of resources**: Resources can be represented in different formats (JSON, XML, HTML, etc.) based on client requirements.
+5. **Uniform interface**: Consistent approach to resource identification and manipulation through HTTP methods.
+6. **HATEOAS** (Hypermedia as the Engine of Application State): Links in responses guide clients to related resources.
+
+Here's how to build a RESTful API using Express.js, the most popular web framework for Node.js:
+
+```javascript
+const express = require('express');
+const bodyParser = require('body-parser');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(bodyParser.json());
+
+// In-memory data store (typically you'd use a database)
+const users = [
+  { id: 1, name: 'John Doe', email: 'john@example.com' },
+  { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
+];
+
+// GET all users
+app.get('/api/users', (req, res) => {
+  res.status(200).json(users);
+});
+
+// GET a specific user
+app.get('/api/users/:id', (req, res) => {
+  const user = users.find(user => user.id === parseInt(req.params.id));
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  res.status(200).json(user);
+});
+
+// POST a new user
+app.post('/api/users', (req, res) => {
+  const { name, email } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ message: 'Name and email are required' });
+  }
+  
+  const newUser = {
+    id: users.length + 1,
+    name,
+    email
+  };
+  
+  users.push(newUser);
+  res.status(201).json(newUser);
+});
+
+// PUT to update a user
+app.put('/api/users/:id', (req, res) => {
+  const user = users.find(user => user.id === parseInt(req.params.id));
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  
+  const { name, email } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ message: 'Name and email are required' });
+  }
+  
+  user.name = name;
+  user.email = email;
+  
+  res.status(200).json(user);
+});
+
+// DELETE a user
+app.delete('/api/users/:id', (req, res) => {
+  const index = users.findIndex(user => user.id === parseInt(req.params.id));
+  if (index === -1) return res.status(404).json({ message: 'User not found' });
+  
+  const deletedUser = users.splice(index, 1)[0];
+  res.status(200).json(deletedUser);
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+```
+
+Best Practices for RESTful APIs in Node.js
+1. **Use proper HTTP status codes**:
+  - 200: OK
+  - 201: Created
+  - 204: No Content
+  - 400: Bad Request
+  - 401: Unauthorized
+  - 403: Forbidden
+  - 404: Not Found
+  - 500: Internal Server Error
+2. **Versioning your API**: Use URL versioning (e.g., `/api/v1/users`) or content negotiation.
+3. **Implement authentication/authorization**: JWT, OAuth, or API keys.
+4. **Use middleware for cross-cutting concerns**: Logging, error handling, CORS, etc.
+5. **Input validation**: Validate request parameters using libraries like Joi or express-validator.
+6. **Pagination**: Implement for large result sets.
+7. **Rate limiting**: Protect your API from abuse.
+8. **Documentation**: Use Swagger/OpenAPI for API documentation.
+
+## Solution 83
+*Reference: [Solution 83](node-questions.md#solution-83)*
+
+### Q. Explain GraphQL vs REST in Node.js applications.
+
+GraphQL and REST are two different approaches to building APIs, each with distinct advantages and trade-offs:
+#### REST
+- **Multiple endpoints**: Each resource typically has its own endpoint
+- **Fixed data structure**: Server determines the structure of the response
+- **Over-fetching/under-fetching**: Clients may receive more data than needed or need multiple requests
+- **Strongly tied to HTTP**: Uses HTTP methods (GET, POST, PUT, DELETE)
+- **Caching**: Natural HTTP caching
+#### GraphQL
+- **Single endpoint**: Typically a single `/graphql` endpoint for all operations
+- **Client-specified queries**: Clients define exactly what data they need
+- **No over-fetching/under-fetching**: Get precisely the data you need in a single request
+- **Transport agnostic**: Though typically used over HTTP
+- **Introspection**: Self-documenting schema
+#### REST in Node.js
+As shown in the previous example, REST APIs in Node.js are typically built using Express:
+```javascript
+// REST API routes
+app.get('/api/users', getUsers);
+app.get('/api/users/:id', getUserById);
+app.get('/api/users/:id/posts', getUserPosts);
+```
+#### GraphQL in Node.js
+GraphQL in Node.js is typically implemented using libraries like Apollo Server or express-graphql.
+```javascript
+const { ApolloServer, gql } = require('apollo-server-express');
+const express = require('express');
+
+// Define schema
+const typeDefs = gql`
+  type User {
+    id: ID!
+    name: String!
+    email: String!
+    posts: [Post!]!
+  }
+  
+  type Post {
+    id: ID!
+    title: String!
+    content: String!
+    author: User!
+  }
+  
+  type Query {
+    users: [User!]!
+    user(id: ID!): User
+    posts: [Post!]!
+    post(id: ID!): Post
+  }
+  
+  type Mutation {
+    createUser(name: String!, email: String!): User!
+    createPost(title: String!, content: String!, authorId: ID!): Post!
+  }
+`;
+
+// Resolvers
+const resolvers = {
+  Query: {
+    users: () => users,
+    user: (_, { id }) => users.find(user => user.id === parseInt(id)),
+    posts: () => posts,
+    post: (_, { id }) => posts.find(post => post.id === parseInt(id))
+  },
+  User: {
+    posts: (parent) => posts.filter(post => post.authorId === parent.id)
+  },
+  Post: {
+    author: (parent) => users.find(user => user.id === parent.authorId)
+  },
+  Mutation: {
+    createUser: (_, { name, email }) => {
+      const newUser = { id: users.length + 1, name, email };
+      users.push(newUser);
+      return newUser;
+    },
+    createPost: (_, { title, content, authorId }) => {
+      const newPost = { 
+        id: posts.length + 1, 
+        title, 
+        content, 
+        authorId: parseInt(authorId) 
+      };
+      posts.push(newPost);
+      return newPost;
+    }
+  }
+};
+
+// Set up Apollo Server
+const server = new ApolloServer({ typeDefs, resolvers });
+
+const app = express();
+server.applyMiddleware({ app });
+
+app.listen({ port: 4000 }, () =>
+  console.log(`Server ready at http://localhost:4000${server.graphqlPath}`)
+);
+```
+#### Key Differences in Practice
+1. **Query Complexity**:
+  - REST: Multiple endpoints for related data
+  - GraphQL: Single query for complex, nested data
+```graphql
+# GraphQL query example
+{
+  user(id: "1") {
+    name
+    email
+    posts {
+      title
+      content
+    }
+  }
+}
+```
+2. **Version Management**:
+  - REST: Often requires API versioning (v1, v2)
+  - GraphQL: Can evolve the schema without breaking existing queries
+3. **Error Handling**:
+  - REST: Uses HTTP status codes
+  - GraphQL: Returns 200 OK with errors in the response body
+4. **Performance Considerations**:
+  - REST: Multiple round trips for complex data
+  - GraphQL: Potential for complex queries that impact server performance
+
+#### When to Choose Each
+**Choose REST when**:
+- You need strong HTTP caching
+- Your API has simple, resource-based operations
+- You have limited client requirements
+- Public APIs with high discoverability
+
+**Choose GraphQL when**:
+- Clients need flexible data requirements
+- You have complex, nested data relationships
+- You need to aggregate data from multiple sources
+- Mobile applications that need to minimize network requests
+
+
+## Solution 84
+*Reference: [Solution 84](node-questions.md#solution-84)*
+
+### Q. How do you implement WebSockets using Socket.io in Node.js?
+
+WebSockets provide full-duplex communication channels over a single TCP connection, enabling real-time, bidirectional communication between clients and servers. Socket.io is a popular library that makes working with WebSockets in Node.js straightforward while providing fallbacks for older browsers.
+
+**Basic Implementation**
+```javascript
+// Server-side code
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
+
+// Serve static files
+app.use(express.static('public'));
+
+// WebSocket connection handler
+io.on('connection', (socket) => {
+  console.log('New client connected:', socket.id);
+  
+  // Handle incoming messages
+  socket.on('chat message', (msg) => {
+    console.log('Message received:', msg);
+    // Broadcast the message to all connected clients
+    io.emit('chat message', msg);
+  });
+  
+  // Handle private messages
+  socket.on('private message', ({ to, message }) => {
+    socket.to(to).emit('private message', {
+      from: socket.id,
+      message
+    });
+  });
+  
+  // Handle client disconnect
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+```
+```html
+<!-- Client-side code (public/index.html) -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Socket.io Chat Example</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const socket = io();
+      const form = document.getElementById('form');
+      const input = document.getElementById('input');
+      const messages = document.getElementById('messages');
+      
+      // Send message
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (input.value) {
+          socket.emit('chat message', input.value);
+          input.value = '';
+        }
+      });
+      
+      // Receive message
+      socket.on('chat message', (msg) => {
+        const item = document.createElement('li');
+        item.textContent = msg;
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+    });
+  </script>
+</head>
+<body>
+  <ul id="messages"></ul>
+  <form id="form">
+    <input id="input" autocomplete="off" /><button>Send</button>
+  </form>
+</body>
+</html>
+```
+#### Advanced Features of Socket.io
+1. **Rooms and Namespaces**:
+```javascript
+// Server-side
+// Namespace for chat
+const chat = io.of('/chat');
+
+chat.on('connection', (socket) => {
+  // Join a room
+  socket.on('join room', (room) => {
+    socket.join(room);
+    chat.to(room).emit('notification', `A user has joined ${room}`);
+  });
+  
+  // Send message to room
+  socket.on('room message', ({ room, message }) => {
+    chat.to(room).emit('room message', message);
+  });
+});
+```
+2. **Middleware**:
+```javascript
+// Authentication middleware
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (isValidToken(token)) {
+    socket.user = getUserFromToken(token);
+    next();
+  } else {
+    next(new Error('Authentication error'));
+  }
+});
+```
+3. **Handling Reconnection**:
+```javascript
+// Server-side
+io.on('connection', (socket) => {
+  // Store client data
+  const sessionID = socket.handshake.auth.sessionID;
+  if (sessionID) {
+    // Find existing session
+    const session = sessionStore.findSession(sessionID);
+    if (session) {
+      socket.sessionID = sessionID;
+      socket.userID = session.userID;
+      // Restore data
+      return;
+    }
+  }
+  
+  // Create new session
+  socket.sessionID = generateSessionID();
+  socket.userID = generateUserID();
+  // Save to session store
+});
+```
+4. **Broadcasting**:
+```javascript
+// Broadcast to all clients
+io.emit('global announcement', 'System maintenance in 10 minutes');
+
+// Broadcast to all clients except sender
+socket.broadcast.emit('user joined', socket.id);
+
+// Broadcast to specific room
+io.to('room1').emit('room message', 'This is for room1 only');
+```
+5. **Scaling with Redis Adapter**:
+```javascript
+const redisAdapter = require('@socket.io/redis-adapter');
+const { createClient } = require('redis');
+
+const pubClient = createClient({ url: 'redis://localhost:6379' });
+const subClient = pubClient.duplicate();
+
+Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+  io.adapter(redisAdapter.createAdapter(pubClient, subClient));
+  io.listen(3000);
+});
+```
+#### Real-World Use Cases
+1. **Real-time Dashboards**:
+  - Sending live updates for metrics, analytics, and system status
+2. **Collaborative Applications**:
+  - Google Docs-like collaboration where multiple users edit simultaneously
+3. **Chat Applications**:
+  - Instant messaging with delivery/read receipts
+4. **Gaming**:
+  - Multiplayer games requiring low-latency communication
+5. **Live Notifications**:
+  - Push notifications for social media interactions, emails, etc.
+Socket.io shines in these scenarios because it handles:
+- Connection management and reconnection
+- Fallbacks for browsers not supporting WebSockets
+- Broadcasting to multiple clients
+- Room-based messaging
+
+## Solution 85
+*Reference: [Solution 85](node-questions.md#solution-85)*
+
+### Q. What is serverless architecture, and how does Node.js fit in (e.g., AWS Lambda)?
+
+Serverless architecture is a cloud computing execution model where the cloud provider dynamically manages the allocation and provisioning of servers. A serverless application runs in stateless compute containers that are event-triggered, ephemeral, and fully managed by the cloud provider.
+
+#### Key Characteristics of Serverless
+1. **No server management**: Developers don't need to provision or maintain servers.
+2. **Pay-per-execution**: You're charged based on the number of executions rather than pre-purchased compute capacity.
+3. **Auto-scaling**: The platform automatically scales based on the load.
+4. **Event-driven**: Functions are triggered by events such as HTTP requests, database changes, file uploads, etc.
+5. **Stateless**: Each function invocation is independent and doesn't rely on the state of the underlying infrastructure.
+
+#### Node.js in Serverless (AWS Lambda)
+Node.js is particularly well-suited for serverless computing due to its:
+- Low memory footprint
+- Fast startup time
+- Event-driven, non-blocking architecture
+- Extensive ecosystem of packages
+
+#### Basic AWS Lambda Function in Node.js
+```javascript
+// Handler function for AWS Lambda
+exports.handler = async (event, context) => {
+  try {
+    // Parse the incoming event
+    const body = JSON.parse(event.body || '{}');
+    const { name = 'World' } = body;
+    
+    // Business logic
+    const response = {
+      message: `Hello, ${name}!`,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Return successful response
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(response)
+    };
+  } catch (error) {
+    // Error handling
+    console.error('Error:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        error: 'Internal Server Error',
+        message: error.message
+      })
+    };
+  }
+};
+```
+#### Deploying with the Serverless Framework
+The Serverless Framework simplifies deploying serverless applications:
+```yaml
+# serverless.yml
+service: my-node-service
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  memorySize: 256
+  timeout: 10
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - http:
+          path: hello
+          method: post
+          cors: true
+  
+  processOrder:
+    handler: orders.process
+    events:
+      - sqs:
+          arn: arn:aws:sqs:us-east-1:123456789012:my-queue
+          batchSize: 10
+```
+#### Best Practices for Node.js in Serverless
+1. **Optimize for cold starts**:
+  - Keep dependencies minimal
+  - Use bundlers like webpack or esbuild to reduce package size
+  - Consider using the AWS SDK v3 for modular imports
+2. **Handle async operations properly**:
+  - Use async/await for readability
+  - Always return promises or use the callback
+3. **Reuse connections**:
+  - Initialize database connections outside the handler function
+  - Use connection pooling for databases
+4. **Error handling**:
+  - Implement robust error handling with proper logging
+  - Return standardized error responses
+5. **Environment variables**:
+  - Store configuration in environment variables
+  - Use AWS Secrets Manager or Parameter Store for sensitive data
+
+## Solution 86
+*Reference: [Solution 86](node-questions.md#solution-86)*
+
+### Q. How do you handle file uploads in Node.js using multer?
+
+Multer is a Node.js middleware for handling file://multipart/form-data, which is primarily used for uploading files. It integrates seamlessly with Express and provides a straightforward API for managing file uploads.
+
+```javascript
+const express = require('express');
+const multer = require('multer');
+const app = express();
+
+const storage = multer.diskStorage({
+  destination: 'uploads/',
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+});
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB limit
+
+app.post('/upload', upload.single('file'), (req, res) => {
+  res.json({ filename: req.file.filename });
+});
+
+app.listen(3000);
+```
+
+#### Best Practices for File Uploads
+1. **Validate file types and sizes**:
+  - Always check the MIME type
+  - Set reasonable file size limits
+  - Verify file contents (not just extensions)
+2. **Secure file storage**:
+  - Never store uploads in public folders without validation
+  - Generate random filenames to prevent overwrites
+  - Use cloud storage when possible
+3. **Handle errors gracefully**:
+  - Provide clear error messages
+  - Clean up temporary files on failure
+4. **Process and sanitize files**:
+  - Resize images to standard dimensions
+  - Remove EXIF data if privacy is a concern
+  - Scan for malware
+5. **Progress tracking for large files**:
+  - Use WebSockets to provide upload progress
+6. **Implement rate limiting**:
+  - Prevent abuse by limiting upload frequency
+
+
+## Solution 87
+*Reference: [Solution 87](node-questions.md#solution-87)*
+
+### Q. What are microservices, and how can Node.js be used to build them?
+
+Microservices architecture is an approach to software development where an application is composed of small, independent services that communicate over well-defined APIs. Each service is focused on doing one thing well, runs in its own process, and can be deployed independently.
+
+#### Key Characteristics of Microservices
+- **Decentralized**: Each service can be developed, deployed, and scaled independently.
+- **Domain-focused**: Services are organized around business capabilities.
+- **Autonomous**: Services own their data and domain logic.
+- **Resilient**: Failure in one service doesn't cascade to others.
+- **Scalable**: Individual services can be scaled based on demand.
+- **Technology diverse**: Different services can use different technologies as needed.
+
+#### Why Node.js is Well-Suited for Microservices
+Node.js offers several advantages for building microservices:
+- **Lightweight**: Low memory footprint and fast startup time.
+- **Non-blocking I/O**: Efficiently handles concurrent requests, ideal for I/O-bound operations.
+- **JSON handling**: Native JSON support for API communication.
+- **Package ecosystem**: Extensive npm packages for microservice patterns.
+- **Containerization friendly**: Works well with Docker and Kubernetes.
+- **Event-driven architecture**: Natural fit for event-based communication between services.
+
+#### Service Definition and API Design
+```javascript
+// user-service.js
+const express = require('express');
+const app = express();
+app.use(express.json());
+
+// Service API endpoints
+app.get('/api/users/:id', async (req, res) => {
+  // Fetch user from database
+});
+
+app.post('/api/users', async (req, res) => {
+  // Create new user
+});
+
+app.listen(3001);
+```
+#### Inter-Service Communication
+Microservices need to communicate with each other. Node.js offers multiple approaches:
+```javascript
+// REST API calls
+const axios = require('axios');
+async function getProductDetails(productId) {
+  const response = await axios.get(`http://product-service/api/products/${productId}`);
+  return response.data;
+}
+
+// Message queues
+const amqp = require('amqplib');
+async function publishOrderEvent(order) {
+  const connection = await amqp.connect('amqp://rabbitmq');
+  const channel = await connection.createChannel();
+  await channel.assertQueue('orders');
+  channel.sendToQueue('orders', Buffer.from(JSON.stringify(order)));
+}
+```
+#### Containerization and Deployment
+Node.js microservices are easily containerized with Docker:
+```dockerfile
+FROM node:16-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --production
+COPY . .
+EXPOSE 3000
+CMD ["node", "index.js"]
+```
+#### Scaling and Load Balancing
+Node.js's cluster module enables multi-core utilization:
+```javascript
+const cluster = require('cluster');
+const numCPUs = require('os').cpus().length;
+
+if (cluster.isMaster) {
+  // Fork workers for each CPU
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
+} else {
+  // Workers share the TCP connection
+  require('./service.js');
+}
+```
+#### Service Discovery and API Gateway
+Using tools like Netflix Eureka or Consul with Node.js:
+```javascript
+// Service registration
+const eureka = require('eureka-js-client');
+const client = new eureka.Eureka({
+  instance: {
+    app: 'user-service',
+    hostName: 'localhost',
+    ipAddr: '127.0.0.1',
+    port: 3000,
+    vipAddress: 'user-service',
+    dataCenterInfo: {
+      name: 'MyOwn'
+    }
+  },
+  eureka: {
+    host: 'eureka-server',
+    port: 8761
+  }
+});
+
+client.start();
+```
+#### Real-World Examples
+1. **Netflix**: Uses Node.js for parts of its microservices architecture
+2. **PayPal**: Moved from Java to Node.js for many of their services
+3. **Uber**: Uses Node.js for their trip processing system
+
+#### Best Practices for Node.js Microservices
+1. **Keep services small and focused** - Single responsibility principle
+2. **Use async/await** for clean asynchronous code
+3. **Implement circuit breakers** for resilience
+4. **Add comprehensive monitoring** - Use tools like Prometheus and Grafana
+5. **Design for failure** - Implement retries, timeouts, and fallbacks
+6. **Use environment variables** for configuration
+7. **Implement proper logging** for debugging and tracing

@@ -293,3 +293,33 @@ How do you handle file uploads in Node.js using multer?
 
 ## Question 87
 What are microservices, and how can Node.js be used to build them?
+
+
+# Core Node.js Internals & OS Interaction
+
+## Question 88
+What are Buffers in Node.js? Why are they necessary when dealing with binary data, and how do they differ from plain JavaScript strings?
+
+## Question 89
+Explain the different types of child processes (spawn, exec, execFile, fork). When would you use each?
+
+## Question 90
+How does the fork() method specifically enable inter-process communication (IPC) between Node.js processes?
+
+## Question 91
+What is the purpose of the C++ bindings in the Node.js architecture?
+
+
+# Advanced Networking & Data Handling
+
+## Question 92
+What is the difference between WebSockets, Server-Sent Events (SSE), and Long Polling? When would you choose one over the others?
+
+## Question 93
+What is gRPC? How does it compare to REST, and what are its potential benefits in a microservices architecture?
+
+## Question 94
+How would you create a basic TCP server in Node.js using the net module?
+
+## Question 95
+What is the difference between the http and http2 core modules? What are the main advantages of HTTP/2?

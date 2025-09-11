@@ -6768,3 +6768,809 @@ client.start();
 5. **Design for failure** - Implement retries, timeouts, and fallbacks
 6. **Use environment variables** for configuration
 7. **Implement proper logging** for debugging and tracing
+-----------
+
+
+
+
+# Core Node.js Internals & OS Interaction
+
+## Solution 88
+*Reference: [Question 88](node-questions.md#question-88)*
+
+### Q. What are Buffers in Node.js? Why are they necessary when dealing with binary data, and how do they differ from plain JavaScript strings?
+
+Buffers in Node.js are instances of the Buffer class that provide a way to work with binary data directly. They represent fixed-length sequences of bytes and were introduced to handle binary data streams efficiently.
+
+**Why Buffers are necessary:**
+JavaScript was originally designed for working with text in web browsers, where Unicode strings are sufficient. However, when Node.js expanded JavaScript to server-side programming, it needed to handle binary data for operations like:
+- File system operations
+- Network protocols
+- Image processing
+- Cryptography
+- Working with binary protocols
+
+**Key differences between Buffers and JavaScript strings:**
+1. **Data representation:**
+  - Strings: Unicode characters (UTF-16)
+  - Buffers: Raw binary data (bytes)
+2. **Memory allocation:**
+  - Strings: Dynamically sized and managed by V8
+  - Buffers: Fixed-length and allocated outside V8's heap in a separate C++ layer
+3. **Data manipulation:**
+  - Strings: Character-oriented operations
+  - Buffers: Byte-oriented operations (support binary operations like bitwise operations)
+4. **Encoding awareness:**
+  - Strings: Always UTF-16 encoded internally
+  - Buffers: Encoding-agnostic; can represent data in any encoding (UTF-8, ASCII, hex, base64, etc.)
+
+**Examples of Buffer usage:**
+```javascript
+// Creating Buffers
+const buf1 = Buffer.alloc(10);                    // Creates a 10-byte buffer filled with zeros
+const buf2 = Buffer.from('Hello World', 'utf8');  // Creates a buffer from a string
+const buf3 = Buffer.from([0x62, 0x75, 0x66, 0x66, 0x65, 0x72]); // Creates from byte array
+
+// Converting between Buffers and strings
+const buf = Buffer.from('Hello', 'utf8');
+console.log(buf);                   // <Buffer 48 65 6c 6c 6f>
+console.log(buf.toString('utf8'));  // 'Hello'
+console.log(buf.toString('hex'));   // '48656c6c6f'
+console.log(buf.toString('base64')); // 'SGVsbG8='
+
+// Binary operations on buffers
+buf[0] = 0x42;  // Change first byte
+console.log(buf.toString());  // 'Bello'
+```
+
+Buffers are essential when dealing with binary protocols, file uploads, or any scenario where you need to process binary data efficiently in Node.js.
+
+
+## Solution 89
+*Reference: [Question 89](node-questions.md#question-89)*
+
+### Q. Explain the different types of child processes (spawn, exec, execFile, fork). When would you use each?
+
+Node.js provides four methods in the child_process module to create child processes, each optimized for different use cases:
+#### 1. `spawn()`
+**Purpose:** Launches a new process with the given command.
+
+**Characteristics:**
+- Returns a stream-based interface
+- Does not buffer child process output
+- Suitable for long-running processes or those with large outputs
+- Does not create a shell by default
+
+**When to use:**
+- Long-running processes (like file watchers or servers)
+- When you need to stream large amounts of data
+- When processing binary data
+
+**Example:**
+```javascript
+const { spawn } = require('child_process');
+const child = spawn('find', ['.', '-type', 'f']);
+
+child.stdout.on('data', (data) => {
+  console.log(`stdout: ${data}`);
+});
+
+child.stderr.on('data', (data) => {
+  console.error(`stderr: ${data}`);
+});
+
+child.on('close', (code) => {
+  console.log(`child process exited with code ${code}`);
+});
+```
+#### 2. `exec()`
+**Purpose:** Executes a command in a shell and buffers the output.
+
+**Characteristics:**
+- Creates a shell to execute the command
+- Buffers the entire output in memory
+- Has a default buffer size limit (200KB)
+- Returns both stdout and stderr in the callback
+
+**When to use:**
+- When you need shell syntax, pipes, or redirections
+- For short-running commands with limited output
+- When you need the command's complete output at once
+
+**Example:**
+```javascript
+const { exec } = require('child_process');
+exec('find . -type f | wc -l', (error, stdout, stderr) => {
+  if (error) {
+    console.error(`exec error: ${error}`);
+    return;
+  }
+  console.log(`Number of files: ${stdout}`);
+});
+```
+#### 3. `execFile()`
+**Purpose:** Similar to exec() but does not spawn a shell.
+
+**Characteristics:**
+- More efficient than `exec()` when a shell is not needed
+- Buffers the output like `exec()`
+- Executes the file directly without a shell
+- Generally more secure than `exec()` for user input
+
+**When to use:**
+- When executing trusted executable files
+- When you don't need shell features
+- When security is a concern (less risk of command injection)
+
+**Example:**
+```javascript
+const { execFile } = require('child_process');
+execFile('node', ['--version'], (error, stdout, stderr) => {
+  if (error) {
+    console.error(`execFile error: ${error}`);
+    return;
+  }
+  console.log(`Node version: ${stdout}`);
+});
+```
+#### 4. `fork()`
+**Purpose:** A specialized version of spawn() for creating Node.js processes.
+
+**Characteristics:**
+- Creates a new Node.js process running a specified module
+- Sets up an IPC (Inter-Process Communication) channel automatically
+- Allows communication between parent and child processes
+- Each process has its own memory, with their own V8 instances
+
+**When to use:**
+- When you need to run CPU-intensive JavaScript operations
+- To leverage multiple cores for Node.js operations
+- When you want to isolate parts of your application
+- When you need to communicate between processes
+
+**Example:**
+```javascript
+const { fork } = require('child_process');
+const child = fork('child-script.js');
+
+// Send message to child
+child.send({ hello: 'world' });
+
+// Receive messages from child
+child.on('message', (message) => {
+  console.log('Message from child:', message);
+});
+
+// In child-script.js
+process.on('message', (message) => {
+  console.log('Message from parent:', message);
+  process.send({ received: true });
+});
+```
+
+## Solution 90
+*Reference: [Question 90](node-questions.md#question-90)*
+
+### Q. How does the fork() method specifically enable inter-process communication (IPC) between Node.js processes?
+
+The fork() method in Node.js is specifically designed to create new Node.js processes with a built-in communication channel between the parent and child processes. This Inter-Process Communication (IPC) capability is what distinguishes fork() from other child process methods.
+
+### How fork() enables IPC:
+
+1. **Automatic IPC Channel Setup:**
+  - When you call `fork()`, Node.js automatically establishes an IPC channel between the parent and child processes
+  - This happens through a dedicated pipe that's set up when the child process is created
+  - This channel is bidirectional, allowing messages to flow in both directions
+
+2. **Message Passing API:**
+  - The parent process can send messages to the child using `child.send(message)`
+  - The child can send messages to the parent using `process.send(message)`
+  - Both processes can listen for messages using the 'message' event
+
+3. **Serialization and Deserialization:**
+  - Messages are automatically serialized using JSON
+  - Complex objects (with circular references) are handled properly
+  - The receiving process gets a deserialized copy of the sent data
+
+4. **Internal Implementation:**
+  - The IPC is implemented using named pipes (on Windows) or Unix domain sockets (on Unix-like systems)
+  - libuv (Node's I/O library) handles the underlying communication details
+  - The V8 serialization API is used for efficient data transfer
+
+#### Example demonstrating IPC with fork():
+**Parent process (main.js):**
+```javascript
+const { fork } = require('child_process');
+
+// Spawn a child process
+const child = fork('./worker.js');
+
+// Send data to the child process
+child.send({ task: 'process', data: [1, 2, 3, 4, 5] });
+
+// Receive results from the child process
+child.on('message', (message) => {
+  if (message.type === 'result') {
+    console.log('Result from worker:', message.data);
+    child.disconnect(); // Close the IPC channel when done
+  }
+});
+
+// Handle errors and termination
+child.on('error', (err) => {
+  console.error('Error in child process:', err);
+});
+
+child.on('exit', (code, signal) => {
+  console.log(`Child process exited with code ${code} and signal ${signal}`);
+});
+```
+**Child process (worker.js):**
+```javascript
+// Listen for messages from the parent
+process.on('message', (message) => {
+  console.log('Message received from parent:', message);
+  
+  if (message.task === 'process') {
+    // Do some CPU-intensive work
+    const result = message.data.map(x => x * x).reduce((a, b) => a + b, 0);
+    
+    // Send the result back to the parent
+    process.send({ 
+      type: 'result', 
+      data: result 
+    });
+  }
+});
+
+// Notify parent that worker is ready
+process.send({ type: 'ready' });
+```
+
+The fork() method is particularly useful for distributing CPU-intensive tasks across multiple Node.js processes, implementing worker pools, or isolating parts of an application for better error handling and resource management.
+
+
+## Solution 91
+*Reference: [Question 91](node-questions.md#question-91)*
+
+### Q. What is the purpose of the C++ bindings in the Node.js architecture?
+
+he C++ bindings in Node.js architecture serve as a crucial bridge between JavaScript and the underlying system resources. They are a fundamental component that enables Node.js to provide high-performance I/O operations while maintaining its JavaScript-based programming model.
+
+#### Primary purposes of C++ bindings in Node.js:
+
+1. **Access to System Resources:**
+  - C++ bindings allow Node.js to interact with low-level operating system APIs
+  - Provides access to file systems, network sockets, cryptographic functions, etc.
+  - Enables operations that are not natively possible in JavaScript
+
+2. **Performance Optimization:**
+  - Computationally intensive operations can be implemented in C++ for better performance
+  - Reduces overhead for operations that would be inefficient in JavaScript
+  - Handles CPU-bound tasks without blocking the event loop
+
+3. **V8 Integration:**
+  - Facilitate communication between JavaScript (V8 engine) and the rest of the Node.js runtime
+  - Enable passing data between JavaScript and C++ layers
+  - Provide mechanisms for callback handling between JavaScript and native code
+
+4. **Buffer Implementation:**
+  - The Buffer class is implemented in C++ to efficiently handle binary data
+  - Provides memory allocation outside V8's heap for better performance with large binary data
+
+5. **Native Addon Support:**
+  - Enables the development of native addons (modules written in C/C++)
+  - Allows integration with existing C/C++ libraries
+  - Provides N-API (Node API) for creating ABI-stable extensions
+
+### Key C++ components in Node.js architecture:
+
+1. **libuv:**
+  - C library that provides the event loop, asynchronous I/O, and thread pool
+  - Abstracts system-level differences across operating systems
+  - Handles file operations, networking, timers, signals, etc.
+
+2. **V8 C++ API:**
+  - Enables embedding the V8 JavaScript engine
+  - Provides facilities for creating JavaScript objects, functions, and handling callbacks from C++
+
+3. **Node.js Core C++ Modules:**
+  - Implementations of core functionality like HTTP parsing, TLS/SSL, compression, etc.
+  - Bindings between JavaScript APIs and native functionality
+
+#### Example of C++ binding implementation:
+This is a simplified example of how a C++ binding might expose file system functionality to JavaScript
+
+```cpp
+// In C++ binding code
+void ReadFile(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+  
+  // Get the file path from JavaScript arguments
+  String::Utf8Value path(isolate, args[0]);
+  
+  // Use native file system API to read file
+  uv_fs_t req;
+  int fd = uv_fs_open(nullptr, &req, *path, O_RDONLY, 0, nullptr);
+  
+  // Read file contents using libuv
+  char buffer[1024];
+  uv_buf_t buf = uv_buf_init(buffer, sizeof(buffer));
+  uv_fs_read(nullptr, &req, fd, &buf, 1, 0, nullptr);
+  
+  // Create JavaScript string from buffer
+  Local<String> result = String::NewFromUtf8(
+    isolate, 
+    buffer, 
+    NewStringType::kNormal, 
+    req.result
+  ).ToLocalChecked();
+  
+  // Close the file
+  uv_fs_close(nullptr, &req, fd, nullptr);
+  
+  // Return result to JavaScript
+  args.GetReturnValue().Set(result);
+}
+
+// Register the C++ function with JavaScript
+void Initialize(Local<Object> exports) {
+  NODE_SET_METHOD(exports, "readFile", ReadFile);
+}
+
+NODE_MODULE(NODE_GYP_MODULE_NAME, Initialize)
+```
+This C++ binding would allow JavaScript code to call the native implementation:
+```javascript
+const nativeModule = require('./build/Release/native_module');
+const content = nativeModule.readFile('/path/to/file.txt');
+```
+
+The C++ bindings in Node.js architecture are essential for its performance, functionality, and integration with system resources. They allow Node.js to maintain its event-driven, non-blocking I/O model while still providing efficient access to underlying system capabilities.
+
+
+# Advanced Networking & Data Handling
+
+## Solution 92
+*Reference: [Question 92](node-questions.md#question-92)*
+
+### Q. What is the difference between WebSockets, Server-Sent Events (SSE), and Long Polling? When would you choose one over the others?
+
+All three technologies enable server-to-client communication, but they differ significantly in their implementation, capabilities, and use cases:
+
+#### WebSockets
+WebSockets provide a full-duplex communication channel over a single, long-lived TCP connection. They enable real-time, bidirectional communication between clients and servers.
+```javascript
+// Server-side WebSocket example with Node.js
+const WebSocket = require('ws');
+const wss = new WebSocket.Server({ port: 8080 });
+
+wss.on('connection', (ws) => {
+  ws.on('message', (message) => {
+    console.log(`Received: ${message}`);
+    ws.send(`Echo: ${message}`);
+  });
+  ws.send('Connection established');
+});
+```
+**Key characteristics:**
+- Full-duplex (bidirectional) communication
+- Persistent connection with low latency
+- Binary and text data support
+- Protocol switch from HTTP to WS after initial handshake
+- Requires special server implementation
+
+According to data from [Bun Docs](https://bun.sh) I accessed about 5 days ago (September 5, 2025), Bun's WebSocket implementation is significantly faster than Node.js with the "ws" library, handling around 700,000 messages per second compared to Node.js's 100,000.
+
+#### Server-Sent Events (SSE)
+SSE establishes a one-way communication channel from server to client over HTTP, allowing servers to push updates to clients.
+```javascript
+// Server-side SSE example with Express
+const express = require('express');
+const app = express();
+
+app.get('/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  
+  const intervalId = setInterval(() => {
+    res.write(`data: ${JSON.stringify({ time: new Date() })}\n\n`);
+  }, 1000);
+  
+  req.on('close', () => clearInterval(intervalId));
+});
+
+app.listen(3000);
+```
+**Key characteristics:**
+- One-way communication (server to client only)
+- Built on standard HTTP
+- Automatic reconnection
+- Text-only data (usually JSON)
+- Native browser support with EventSource API
+- Simple implementation with standard web servers
+
+#### Long Polling
+Long polling is a technique where the client makes an HTTP request to the server, and the server holds the response until it has new data to send.
+```javascript
+// Server-side Long Polling example with Express
+const express = require('express');
+const app = express();
+
+const clients = [];
+let messageId = 0;
+
+app.get('/poll', (req, res) => {
+  const clientId = Date.now();
+  const lastMessageId = parseInt(req.query.lastId) || 0;
+  
+  clients.push({
+    id: clientId,
+    res,
+    lastMessageId
+  });
+  
+  req.on('close', () => {
+    const index = clients.findIndex(client => client.id === clientId);
+    if (index !== -1) clients.splice(index, 1);
+  });
+});
+
+app.post('/message', (req, res) => {
+  const message = { id: ++messageId, text: req.body.text, time: new Date() };
+  
+  clients.forEach(client => {
+    if (client.lastMessageId < message.id) {
+      client.res.json(message);
+      client.lastMessageId = message.id;
+      
+      const index = clients.indexOf(client);
+      clients.splice(index, 1);
+    }
+  });
+  
+  res.status(204).end();
+});
+
+app.listen(3000);
+```
+**ey characteristics:**
+- Simulated real-time with standard HTTP
+- Higher latency than WebSockets
+- Works with legacy browsers
+- More resource-intensive due to repeated connections
+- Complex error handling and reconnection logic
+#### When to choose each technology:
+
+**Choose WebSockets when:**
+- You need bidirectional communication
+- You require low-latency real-time updates
+- You're building applications like chat apps, multiplayer games, or collaborative editors
+- You need to transfer binary data
+- Your server can maintain persistent connections
+
+**Choose SSE when:**
+- You need server-to-client updates only
+- You want simpler implementation than WebSockets
+- You need automatic reconnection
+- You want to leverage standard HTTP infrastructure
+- Browser compatibility is important (though IE requires polyfills)
+- Examples: news feeds, stock tickers, notification systems
+
+**Choose Long Polling when:**
+- You need compatibility with older browsers/environments
+- You can't implement WebSockets or SSE on your server
+- Your updates are infrequent
+- Your server has constraints on persistent connections
+- Examples: simple notification systems, basic chat applications
+
+
+## Solution 93
+*Reference: [Question 93](node-questions.md#question-93)*
+
+### Q. What is gRPC? How does it compare to REST, and what are its potential benefits in a microservices architecture?
+
+gRPC is an open-source, high-performance RPC (Remote Procedure Call) framework developed by Google. It uses HTTP/2 for transport and Protocol Buffers (protobuf) as its interface description language.
+
+**Key characteristics of gRPC**:
+
+```javascript
+
+// Example .proto file for a user service
+syntax = "proto3";
+
+package users;
+
+service UserService {
+  rpc GetUser (UserRequest) returns (UserResponse) {}
+  rpc ListUsers (ListUsersRequest) returns (stream UserResponse) {}
+  rpc UpdateUser (stream UserUpdateRequest) returns (UserResponse) {}
+  rpc ChatWithSupport (stream ChatMessage) returns (stream ChatMessage) {}
+}
+
+message UserRequest {
+  string user_id = 1;
+}
+
+message UserResponse {
+  string user_id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+// Other message definitions...
+```
+
+- **Strongly typed contracts**: Uses Protocol Buffers to define services and messages
+
+- **Multiple communication patterns**: Supports unary, server streaming, client streaming, and bidirectional streaming
+
+- **HTTP/2-based**: Leverages multiplexing, header compression, and binary protocol
+
+- **Cross-language**: Generated client/server stubs in multiple languages
+
+- **Built-in features**: Authentication, load balancing, health checking, etc.
+
+#### gRPC vs. REST
+| Feature | gRPC | REST |
+| :--- | :--- | :--- |
+| Protocol | HTTP/2 | HTTP/1.1 or HTTP/2 |
+| Format | Protocol Buffers (binary) | Typically JSON (text) |
+| Contract | Strict (.proto files) | Loose (OpenAPI optional) |
+| Streaming | Full bidirectional | Limited (Server-Sent Events) |
+| Browser Support | Limited (requires proxy) | Native |
+| Code Generation | Native multi-language | Optional (OpenAPI) |
+| Learning Curve | Steeper | Flatter |
+| Maturity | Newer | Well-established |
+| Payload Size | Smaller (binary) | Larger (text) |
+| Performance | Faster | Slower |
+
+#### Benefits in Microservices Architecture
+
+1. **Efficient Communication**: Binary serialization and HTTP/2 result in smaller payloads and fewer connections, reducing network overhead between services.
+2. **Strong Typing**: The contract-first approach with .proto files ensures API consistency and type safety across services, reducing integration errors.
+3. **Streaming Capabilities**: Supports various streaming patterns, enabling more efficient data transfer for large datasets or real-time updates between services.
+4. **Service Definition**: Clear service definitions that can be shared across teams and languages, improving developer experience.
+5. **Code Generation**: Automatic generation of client and server code reduces boilerplate and ensures consistency between client-server interactions.
+6. **Performance**: Significantly faster than JSON-based REST APIs, especially important for high-frequency inter-service communication.
+7. **Bi-directional Communication**: Full-duplex communication enables more sophisticated service interactions.
+8. **Deadline/Timeout Propagation**: Built-in support for propagating request deadlines through call chains.
+9. **Error Handling**: Structured error model with standard error codes that work across languages.
+10. **Load Balancing and Service Discovery**: First-class support for common microservice patterns.
+
+### When to Use gRPC in Microservices
+gRPC is particularly beneficial for:
+- Internal service-to-service communication where efficiency is crucial
+- Polyglot environments with multiple programming languages
+- Systems requiring streaming data between services
+- Low-latency, high-throughput communication channels
+- Services with well-defined interfaces that change infrequently
+However, REST might still be preferred for:
+- Public APIs where widespread client compatibility is needed
+- Simple CRUD operations where developer familiarity is more important than performance
+- When browser direct communication is required without proxies
+
+
+## Solution 94
+*Reference: [Question 94](node-questions.md#question-94)*
+
+### Q. How would you create a basic TCP server in Node.js using the net module?
+
+The `net` module in Node.js provides an asynchronous network API for creating TCP servers and clients. Here's how to create a basic TCP server:
+
+```javascript
+const net = require('net');
+
+// Create a TCP server
+const server = net.createServer((socket) => {
+  // 'socket' is the connection object for this client
+  const clientAddress = `${socket.remoteAddress}:${socket.remotePort}`;
+  console.log(`Client connected: ${clientAddress}`);
+  
+  // Set encoding for data (optional)
+  socket.setEncoding('utf8');
+  
+  // Handle incoming data
+  socket.on('data', (data) => {
+    console.log(`Received from ${clientAddress}: ${data}`);
+    
+    // Echo back the data
+    socket.write(`You sent: ${data}`);
+  });
+  
+  // Handle client disconnection
+  socket.on('end', () => {
+    console.log(`Client disconnected: ${clientAddress}`);
+  });
+  
+  // Handle errors
+  socket.on('error', (err) => {
+    console.error(`Error with connection ${clientAddress}: ${err.message}`);
+  });
+  
+  // Send a welcome message
+  socket.write('Welcome to the TCP server!\r\n');
+});
+
+// Set maximum connections (optional)
+server.maxConnections = 100;
+
+// Handle server errors
+server.on('error', (err) => {
+  console.error(`Server error: ${err.message}`);
+  if (err.code === 'EADDRINUSE') {
+    console.error('Address already in use, retrying...');
+    setTimeout(() => {
+      server.close();
+      server.listen(PORT, HOST);
+    }, 1000);
+  }
+});
+
+// Listen for connections
+const PORT = 3000;
+const HOST = '127.0.0.1';
+
+server.listen(PORT, HOST, () => {
+  console.log(`TCP Server listening on ${HOST}:${PORT}`);
+  
+  // Get server address info
+  const address = server.address();
+  console.log(`Server address: ${JSON.stringify(address)}`);
+});
+```
+#### Key Components and Concepts:
+1. **Creating the Server**:
+  - `net.createServer()` creates a new TCP server instance
+  - The callback is called whenever a new client connects
+
+2. **Socket Object**:
+  - Represents a client connection
+  - Implements a duplex stream interface for reading/writing data
+  - Contains information about the remote client (IP, port)
+
+3. **Event Handling**:
+  - `'data'`: Fired when data is received from a client
+  - `'end'`: Fired when a client disconnects properly
+  - `'error'`: Fired when an error occurs with the connection
+  - `'close'`: Fired when the socket is fully closed
+
+4. **Server Events**:
+  - `'listening'`: Fired when the server is bound and listening
+  - `'connection'`: Fired when a new client connects
+  - `'error'`: Fired when the server encounters an error
+  - `'close'`: Fired when the server closes
+
+5. **Data Handling**:
+  - TCP is a stream-based protocol, so data comes in chunks
+  - Setting encoding (e.g., `socket.setEncoding('utf8')`) interprets the binary data as strings
+  - For binary data, use Buffer objects
+
+#### Testing the TCP Server:
+You can test this server using telnet or the Node.js net client:
+```javascript
+// test-client.js
+const net = require('net');
+
+const client = net.createConnection({ port: 3000, host: '127.0.0.1' }, () => {
+  console.log('Connected to server!');
+  client.write('Hello from client!');
+});
+
+client.on('data', (data) => {
+  console.log(`Received from server: ${data}`);
+  // Close the connection after receiving response
+  client.end();
+});
+
+client.on('end', () => {
+  console.log('Disconnected from server');
+});
+
+client.on('error', (err) => {
+  console.error(`Error: ${err.message}`);
+});
+```
+
+TCP servers are useful for custom protocols, high-performance applications, or situations where you need more control than HTTP provides. I've used TCP servers for implementing custom application protocols, real-time data services, and as the foundation for higher-level services.
+
+
+## Solution 95
+*Reference: [Question 95](node-questions.md#question-95)*
+
+### Q. What is the difference between the http and http2 core modules? What are the main advantages of HTTP/2?
+
+Node.js provides both http and http2 core modules for creating HTTP servers and clients, but they implement different versions of the HTTP protocol with significant differences in features and performance characteristics.
+
+#### Key Differences Between http and http2 Modules
+```javascript
+// http module example (HTTP/1.1)
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Hello World\n');
+});
+
+server.listen(8080);
+```
+```javascript
+// http2 module example (HTTP/2)
+const http2 = require('http2');
+const fs = require('fs');
+
+// HTTP/2 server requires TLS in browsers (though not strictly in the spec)
+const server = http2.createSecureServer({
+  key: fs.readFileSync('server.key'),
+  cert: fs.readFileSync('server.cert')
+});
+
+server.on('stream', (stream, headers) => {
+  stream.respond({
+    'content-type': 'text/plain',
+    ':status': 200
+  });
+  stream.end('Hello World\n');
+});
+
+server.listen(8443);
+
+```
+| Feature | http module | http2 module |
+| :--- | :--- | :--- |
+| Protocol | HTTP/1.1 | HTTP/2 |
+| API Style | Request/Response | Stream-based |
+| Headers | Case-insensitive JS objects | Lower-case with special pseudo-headers |
+| Multiple Requests | One per connection | Multiple (multiplexed) |
+| HTTPS | Separate https module | Integrated (createSecureServer) |
+| Push Support | No | Yes (server push) |
+| Stream API | No | Yes |
+| Backward Compatibility | - | Can fallback to HTTP/1.1 |
+
+#### Main Advantages of HTTP/2
+
+1. **Multiplexing**: HTTP/2 allows multiple requests and responses to be in flight simultaneously over a single connection, eliminating "head-of-line blocking" issues in HTTP/1.1.
+```javascript
+// In HTTP/2, these requests can all use the same connection
+// and happen concurrently without blocking each other
+const http2 = require('http2');
+const client = http2.connect('https://example.com');
+   
+client.request({ ':path': '/resource1' });
+client.request({ ':path': '/resource2' });
+client.request({ ':path': '/resource3' });
+```
+2. **Header Compression (HPACK)**: HTTP/2 compresses headers to reduce overhead, especially beneficial for requests with cookies or other large headers.
+3. **Binary Protocol**: Unlike HTTP/1.1's text-based protocol, HTTP/2 uses binary framing, making it more efficient to parse and less error-prone.
+4. **Server Push**: Servers can preemptively send resources to clients before they're explicitly requested.
+```javascript
+// Server push example
+stream.pushStream({ ':path': '/style.css' }, (pushStream) => {
+  pushStream.respond({ ':status': 200, 'content-type': 'text/css' });
+  pushStream.end(cssContent);
+});
+```
+5. **Stream Prioritization**: Clients can indicate which resources are more important, allowing servers to allocate resources more efficiently.
+6. **One Connection Per Origin**: Reduces the number of TCP connections needed, lowering overhead and improving network utilization.
+7. **Flow Control**: Built-in mechanisms to prevent overwhelming receivers with too much data.
+8. **Improved Performance**: The combination of these features results in significantly faster page loads, especially on high-latency connections.
+
+#### Real-world Performance Impact
+HTTP/2 provides substantial performance improvements:
+- **Reduced page load times**: Typically 20-50% faster page loads
+- **Fewer connections**: Reduced overhead and faster initial loading
+- **Better network utilization**: More efficient use of available bandwidth
+- **Lower latency**: Particularly noticeable on mobile networks
+
+#### When to Use HTTP/2 in Node.js
+HTTP/2 is particularly beneficial for:
+- Applications serving many small resources (images, CSS, JS files)
+- High-latency networks where connection setup time is significant
+- Mobile applications where bandwidth and latency are concerns
+- APIs with many small requests that can benefit from multiplexing
+
+However, there are considerations:
+- HTTP/2 has a more complex implementation
+- TLS is effectively required (browsers only support HTTP/2 over TLS)
+- Some legacy proxies may not support HTTP/2
